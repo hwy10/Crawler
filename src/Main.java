@@ -1,7 +1,8 @@
 
 public class Main {
 	public static void main(String args[]) { 
-		
+		Douban.Entry entry=new Douban.Entry();
+		entry.run();
     }
 	
 	public static void AboutMe(String args[]){
@@ -18,8 +19,7 @@ public class Main {
 		
 		if (args.length>3&&args[args.length-3].equals("proxy")){
 			System.setProperty("http.maxRedirects", "50");  
-	        System.getProperties().setProperty("proxySet", "true");  
-	        // 如果不设置，只要代理IP和代理端口正确,此项不设置也可以  
+	        System.getProperties().setProperty("proxySet", "true");
 	        System.getProperties().setProperty("http.proxyHost", args[args.length-2]);  
 	        System.getProperties().setProperty("http.proxyPort", args[args.length-1]);
 		}

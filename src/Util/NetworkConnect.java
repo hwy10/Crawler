@@ -31,8 +31,9 @@ public class NetworkConnect {
 			method.setRequestHeader("Content-Type", "application/json; charset=utf-8");
 			
 			client.executeMethod(method);
-		    System.out.println(method.getStatusLine());  
-		    System.out.println(method.getResponseBodyAsString());  
+		    //System.out.println(method.getStatusLine());  
+		    //System.out.println(method.getResponseBodyAsString());  
+			result=method.getResponseBodyAsString();
 		    method.releaseConnection();
 		}catch (Exception ex){
 			ex.printStackTrace();
@@ -46,9 +47,9 @@ public class NetworkConnect {
         try {
             String urlNameString = url + "?" + param;
             URL realUrl = new URL(urlNameString);
-            // 打开和URL之间的连接
+            // 鎵撳紑鍜孶RL涔嬮棿鐨勮繛鎺�
             URLConnection connection = realUrl.openConnection();
-            // 设置通用的请求属性
+            // 璁剧疆閫氱敤鐨勮姹傚睘鎬�
             connection.setRequestProperty("accept", "*/*");
             connection.setRequestProperty("connection", "Keep-Alive");
             connection.setRequestProperty("user-agent",
@@ -56,11 +57,11 @@ public class NetworkConnect {
             if (cookie.length()>0) 
             	connection.addRequestProperty("Cookie", cookie);
             connection.addRequestProperty("Content-Type", "application/json; charset=utf-8");
-            // 建立实际的连接
+            // 寤虹珛瀹為檯鐨勮繛鎺�
             connection.setDoInput(true);
             connection.setDoOutput(true);
             connection.connect();
-            // 定义 BufferedReader输入流来读取URL的响应
+            // 瀹氫箟 BufferedReader杈撳叆娴佹潵璇诲彇URL鐨勫搷搴�
             in = new BufferedReader(new InputStreamReader(
                     connection.getInputStream()));
             String line;
@@ -69,11 +70,11 @@ public class NetworkConnect {
             }
         } catch (Exception e) {
         	System.out.println(url+"\t"+param);
-            System.out.println("发送GET请求出现异常！" + e);
+            System.out.println("鍙戦�丟ET璇锋眰鍑虹幇寮傚父锛�" + e);
             //e.printStackTrace();
             
         }
-        // 使用finally块来关闭输入流
+        // 浣跨敤finally鍧楁潵鍏抽棴杈撳叆娴�
         finally {
             try {
                 if (in != null) {
