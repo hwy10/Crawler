@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/httpclient/commons-codec-1.6.jar"/>
+	<classpathentry kind="lib" path="lib/httpclient/commons-logging-1.1.3.jar"/>
+	<classpathentry kind="lib" path="lib/httpclient/fluent-hc-4.3.5.jar"/>
+	<classpathentry kind="lib" path="lib/httpclient/httpclient-4.3.5.jar"/>
+	<classpathentry kind="lib" path="lib/httpclient/httpclient-cache-4.3.5.jar"/>
+	<classpathentry kind="lib" path="lib/httpclient/httpcore-4.3.2.jar"/>
+	<classpathentry kind="lib" path="lib/httpclient/httpmime-4.3.5.jar"/>
+	<classpathentry kind="lib" path="lib/httpclient/commons-codec-1.4.jar"/>
+	<classpathentry kind="lib" path="lib/httpclient/commons-httpclient-3.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/httpclient/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-beanutils-1.7.0.jar"/>
+	<classpathentry kind="lib" path="lib/commons-codec-1.4.jar"/>
+	<classpathentry kind="lib" path="lib/commons-collections-3.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-httpclient-3.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-httpclient-3.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-lang-2.3.jar"/>
+	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/ezmorph-1.0.3.jar"/>
+	<classpathentry kind="lib" path="lib/json-lib-2.2.3-jdk15.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
