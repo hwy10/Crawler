@@ -1,46 +1,47 @@
-package Douban;
+package Tasks;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.LinkedList;
-import java.util.Random;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
+
 import BasicOps.FileOps;
-import Util.NetworkConnect;
+import Crawler.Client;
+import Crawler.Config;
+import Crawler.Worker;
+import Douban.ClientWrapper;
+import Douban.DBconnector;
 
-public class Worker extends Thread {
-	private ClientWrapper client;
-	public String name;
+public class Douban extends Crawler.Task{
+
 	@Override
-	public void run(){
-		try{
-			Random random=new Random();
-			DBconnector conn=new DBconnector();
-
-			client=new ClientWrapper();
-			client.init();
-			
-			for (;;){
-				int nxtId=conn.getNextUser();
-				if (nxtId==-1) break;
-				if (!updateUser(nxtId))break;
-				Thread.sleep(random.nextInt(2000)+1000);
-			}
-			conn.close();
-		}catch (Exception ex){
-			ex.printStackTrace();
-		}
+	public boolean InitialCheck(String wid,Client client) {
+		return login(wid,client);
 	}
-	
-	public boolean updateUser(int nxtId){
+
+	@Override
+	public boolean run(Worker worker,Client client) {
+		DBconnector conn=new DBconnector();
+		int nxtId=conn.getNextUser();
+		if (nxtId==-1) return false;
 		
-		System.out.println(name+" updateUser "+nxtId);
+		worker.curStatus="user_"+nxtId;
+				
 		String homepage=client.getContent("http://m.douban.com/people/"+nxtId+"/about");
 		FileOps.SaveFile("D:\\cxz\\rawdata\\douban\\userhomepage\\"+nxtId, homepage.length()+homepage);
 
 		LinkedList<Integer> friends=new LinkedList<Integer>();
 		
 		for (int i=1;;i++){
+			worker.curStatus="user_"+nxtId+" friends page "+i;
 			String cur=client.getContent(
 					"http://m.douban.com/people/"+nxtId+"/contacts?page="+i);
 			FileOps.createDir("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId);
@@ -57,20 +58,13 @@ public class Worker extends Thread {
 			if (ncur==0) break;
 		}
 		
-		System.out.println(name+" "+"Extracting Infos");
-		
 		String username=extractUsername(homepage);
-		System.out.println(name+"\tusername\t"+username);
 		if (username.equals("")) return false;
+		worker.curStatus="user_"+nxtId+" #friends "+friends.size()+"\t"+username;
+		
 		String location=extractLocation(homepage);
 		String description=extractDescription(homepage);
 		String displayName=extractDisplay(homepage);
-		
-		System.out.println(name+"\tlocation\t"+location);
-		System.out.println(name+"\tdescription\t"+description);
-		System.out.println(name+"\tdisplay\t"+displayName);
-		System.out.println(name+"\t"+"Friend Count\t"+friends.size());
-		DBconnector conn=new DBconnector();
 		
 		for (int i=0;i<friends.size();i++){
 			conn.addFriend(nxtId,friends.get(i));
@@ -79,10 +73,36 @@ public class Worker extends Thread {
 		conn.updateUser(nxtId,username,displayName,location,description,"1");
 		
 		conn.close();
-		
-		System.out.println(name+" "+"User Finished");
 		return true;
 	}
+
+	@Override
+	public boolean login(String wid,Client client) {
+		try{
+			String content=client.getContent("http://m.douban.com/login");
+			Matcher matcher=Pattern.compile("/captcha/(.*?)/").matcher(content);
+			matcher.find();
+			String capId=matcher.group(1);
+			String capsol;
+			String imgdir="http://m.douban.com/captcha/"+capId+"/?size=m";
+			if (!client.saveImg(imgdir,"temp\\"+wid+"imgcode.jpg")) return false;
+			capsol=com.cqz.dm.CodeReader.getImgCode("temp\\"+wid+"imgcode.jpg", 3008);
+
+			LinkedList<NameValuePair> params=new LinkedList<NameValuePair>();
+			params.add(new BasicNameValuePair("form_email", Config.username));
+			params.add(new BasicNameValuePair("form_password", Config.password));
+			params.add(new BasicNameValuePair("captcha-solution", capsol));
+			params.add(new BasicNameValuePair("captcha-id",capId));
+			params.add(new BasicNameValuePair("user_login", "登录"));
+			
+			String res=client.sendPost("http://m.douban.com/login",params);
+			
+			if (res.contains("you should be redirected automatically.")) return true;
+		}catch (Exception ex){
+		}
+		return false;
+	}
+
 	
 	private String extractUsername(String homepage){
 		Matcher matcher=Pattern.compile("<span>id.*?</span>(.*?)<br />").matcher(homepage);
