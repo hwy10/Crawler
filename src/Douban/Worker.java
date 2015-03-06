@@ -10,6 +10,7 @@ import Util.NetworkConnect;
 
 public class Worker extends Thread {
 	private ClientWrapper client;
+	public String name;
 	@Override
 	public void run(){
 		try{
@@ -22,7 +23,7 @@ public class Worker extends Thread {
 			for (;;){
 				int nxtId=conn.getNextUser();
 				if (nxtId==-1) break;
-				updateUser(nxtId);
+				if (!updateUser(nxtId))break;
 				Thread.sleep(random.nextInt(2000)+1000);
 			}
 			conn.close();
@@ -31,11 +32,10 @@ public class Worker extends Thread {
 		}
 	}
 	
-	public void updateUser(int nxtId){
+	public boolean updateUser(int nxtId){
 		
-		System.out.println("updateUser "+nxtId);
-		String homepage=NetworkConnect.send2Get(
-				"http://m.douban.com/people/"+nxtId+"/about","","");
+		System.out.println(name+" updateUser "+nxtId);
+		String homepage=client.getContent("http://m.douban.com/people/"+nxtId+"/about");
 		FileOps.SaveFile("D:\\cxz\\rawdata\\douban\\userhomepage\\"+nxtId, homepage.length()+homepage);
 
 		LinkedList<Integer> friends=new LinkedList<Integer>();
@@ -53,21 +53,22 @@ public class Worker extends Thread {
 				ncur++;
 				friends.add(Integer.valueOf(matcher.group(1)));
 			}
-			System.out.println("Friend List "+i+"\t"+ncur);
 			if (ncur==0) break;
 		}
 		
-		System.out.println("Extracting Infos");
+		System.out.println(name+" "+"Extracting Infos");
+		
 		String username=extractUsername(homepage);
+		System.out.println(name+"\tusername\t"+username);
+		if (username.equals("")) return false;
 		String location=extractLocation(homepage);
 		String description=extractDescription(homepage);
 		String displayName=extractDisplay(homepage);
 		
-		System.out.println(username);
-		System.out.println(location);
-		System.out.println(description);
-		System.out.println(displayName);
-		System.out.println("Friend Count = "+friends.size());
+		System.out.println(name+"\tlocation\t"+location);
+		System.out.println(name+"\tdescription\t"+description);
+		System.out.println(name+"\tdisplay\t"+displayName);
+		System.out.println(name+"\t"+"Friend Count\t"+friends.size());
 		DBconnector conn=new DBconnector();
 		
 		for (int i=0;i<friends.size();i++){
@@ -78,17 +79,18 @@ public class Worker extends Thread {
 		
 		conn.close();
 		
-		System.out.println("User Finished");
+		System.out.println(name+" "+"User Finished");
+		return true;
 	}
 	
 	private String extractUsername(String homepage){
-		Matcher matcher=Pattern.compile("<span>id：</span>(.*?)<br />").matcher(homepage);
+		Matcher matcher=Pattern.compile("<span>id.*?</span>(.*?)<br />").matcher(homepage);
 		if (matcher.find())
 			return matcher.group(1).trim();
 		return "";
 	}
 	private String extractDisplay(String homepage){
-		Matcher matcher=Pattern.compile("<a href=\"/people/\\d*/\" class=\"founder\">(.*?)</a>").matcher(homepage);
+		Matcher matcher=Pattern.compile("class=\"founder\">(.*?)</a>").matcher(homepage);
 		if (matcher.find())
 			return matcher.group(1).trim();
 		return "";

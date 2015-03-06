@@ -11,12 +11,20 @@ import Util.NetworkConnect;
 public class Entry {
 	public void run(){
 		try{
+			int K=30;
 			for (int i=0;;i++){
-				System.out.println("Worker "+i);
-				Worker worker=new Worker();
-				worker.start();
+				System.out.println("Iteration "+i);
+				Worker[] workers=new Worker[K];
+				for (int j=0;j<K;j++){
+					workers[j]=new Worker();
+					workers[j].name="worker"+j;
+					workers[j].start();
+					Thread.sleep(1000*5);
+				}
 				Thread.sleep(1000*60*60*2);
-				System.out.println("Worker Finished");
+				for (int j=0;j<K;j++)
+					workers[j].stop();
+				System.out.println("Iteration Finished");
 			}
 		}catch (Exception ex){
 			ex.printStackTrace();
