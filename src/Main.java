@@ -1,8 +1,10 @@
 
 public class Main {
 	public static void main(String args[]) { 
-		Douban.Entry entry=new Douban.Entry();
-		entry.run();
+		if (args[0].equals("douban")){
+			Douban.Entry entry=new Douban.Entry();
+			entry.run();
+		}
     }
 	
 	public static void AboutMe(String args[]){

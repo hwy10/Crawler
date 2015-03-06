@@ -23,5 +23,6 @@
 	<classpathentry kind="lib" path="lib/json-lib-2.2.3-jdk15.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.34-bin.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/BasicOps"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/JavaDemo"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
