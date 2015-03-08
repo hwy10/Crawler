@@ -11,27 +11,37 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.message.BasicNameValuePair;
 
+import Trash.ClientWrapper;
+import Trash.DBconnector;
 import BasicOps.FileOps;
 import Crawler.Client;
 import Crawler.Config;
+import Crawler.TaskSetting;
 import Crawler.Worker;
-import Douban.ClientWrapper;
-import Douban.DBconnector;
 
 public class Douban extends Crawler.Task{
-
+	private TaskSetting req;
 	@Override
-	public boolean InitialCheck(String wid,Client client) {
-		return login(wid,client);
+	public TaskSetting clientRequest() {
+		if (req!=null) return req;
+		req=new TaskSetting();
+		req.proxyType="";
+		req.cookiePolicy=CookiePolicy.RFC_2109;
+		return req;
+	}
+	@Override
+	public String InitialCheck(Worker worker,Client client) {
+		return login(worker,client);
 	}
 
 	@Override
-	public boolean run(Worker worker,Client client) {
+	public String run(Worker worker,Client client) {
 		DBconnector conn=new DBconnector();
 		int nxtId=conn.getNextUser();
-		if (nxtId==-1) return false;
+		if (nxtId==-1) return "Douban Error #1";
 		
 		worker.curStatus="user_"+nxtId;
 				
@@ -47,7 +57,7 @@ public class Douban extends Crawler.Task{
 			FileOps.createDir("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId);
 			FileOps.SaveFile("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId+"\\"+i, cur);
 			int ncur=0;
-			if (cur.contains("你在豆瓣的注册密码")) return false;
+			if (cur.contains("你在豆瓣的注册密码")) return "Douban Error #2";
 			Matcher matcher=Pattern.compile("<a href=\"/people/(.*?)/").matcher(cur);
 			for (;matcher.find();){
 				int id=Integer.valueOf(matcher.group(1));
@@ -59,8 +69,8 @@ public class Douban extends Crawler.Task{
 		}
 		
 		String username=extractUsername(homepage);
-		if (username.equals("")) return false;
-		worker.curStatus="user_"+nxtId+" #friends "+friends.size()+"\t"+username;
+		if (username.equals("")) return "Douban Error #3";
+		worker.curStatus="###user_"+nxtId+" #friends "+friends.size()+"   "+username;
 		
 		String location=extractLocation(homepage);
 		String description=extractDescription(homepage);
@@ -73,11 +83,11 @@ public class Douban extends Crawler.Task{
 		conn.updateUser(nxtId,username,displayName,location,description,"1");
 		
 		conn.close();
-		return true;
+		return "";
 	}
 
 	@Override
-	public boolean login(String wid,Client client) {
+	public String login(Worker worker,Client client) {
 		try{
 			String content=client.getContent("http://m.douban.com/login");
 			Matcher matcher=Pattern.compile("/captcha/(.*?)/").matcher(content);
@@ -85,22 +95,22 @@ public class Douban extends Crawler.Task{
 			String capId=matcher.group(1);
 			String capsol;
 			String imgdir="http://m.douban.com/captcha/"+capId+"/?size=m";
-			if (!client.saveImg(imgdir,"temp\\"+wid+"imgcode.jpg")) return false;
-			capsol=com.cqz.dm.CodeReader.getImgCode("temp\\"+wid+"imgcode.jpg", 3008);
+			if (!client.saveImg(imgdir,"temp\\"+worker.wid+"imgcode.jpg")) return "Douban Error #5";
+			capsol=com.cqz.dm.CodeReader.getImgCode("temp\\"+worker.wid+"imgcode.jpg", 3008);
 
 			LinkedList<NameValuePair> params=new LinkedList<NameValuePair>();
-			params.add(new BasicNameValuePair("form_email", Config.username));
-			params.add(new BasicNameValuePair("form_password", Config.password));
+			params.add(new BasicNameValuePair("form_email", ""));
+			params.add(new BasicNameValuePair("form_password", ""));
 			params.add(new BasicNameValuePair("captcha-solution", capsol));
 			params.add(new BasicNameValuePair("captcha-id",capId));
 			params.add(new BasicNameValuePair("user_login", "登录"));
 			
 			String res=client.sendPost("http://m.douban.com/login",params);
 			
-			if (res.contains("you should be redirected automatically.")) return true;
+			if (res.contains("you should be redirected automatically.")) return "";
 		}catch (Exception ex){
 		}
-		return false;
+		return "Douban Error #7";
 	}
 
 	
@@ -127,5 +137,14 @@ public class Douban extends Crawler.Task{
 		if (matcher.find())
 			return matcher.group(1).trim();
 		return "";
+	}
+	@Override
+	public void releaseResources() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public boolean superInit(Worker worker) {
+		return true;
 	}
 }

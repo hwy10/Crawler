@@ -1,4 +1,4 @@
-package Douban;
+package Trash;
 
 public class User {
 	public int uid;

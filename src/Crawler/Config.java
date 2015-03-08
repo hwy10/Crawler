@@ -1,16 +1,18 @@
 package Crawler;
+import java.util.HashMap;
 import java.util.LinkedList;
+
+import org.apache.http.client.params.CookiePolicy;
 
 
 public class Config {
 	public static int NWorker=1;
+	public static int GuardInterval=3;
 	public static int restTime=1000;
-	public static LinkedList<String> ProxyIP;
-	public static LinkedList<Integer> ProxyPort;
-	public static String Task="";
+	public static int guiUpdateInterval=5;
 	
-	public static String username="hijack2004@126.com";
-	public static String password="cat12321";
+	public static String Task="WeiboUser";
 	
-	public static LinkedList<Worker> workers=new LinkedList<Worker>();
+	public static String cookie=CookiePolicy.BROWSER_COMPATIBILITY;
+	
 }

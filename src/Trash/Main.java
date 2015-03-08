@@ -1,9 +1,9 @@
-package Crawler;
+package Trash;
 
 public class Main {
 	public static void main(String args[]) { 
 		if (args[0].equals("douban")){
-			Douban.Entry entry=new Douban.Entry();
+			Trash.Entry entry=new Trash.Entry();
 			entry.run();
 		}
     }

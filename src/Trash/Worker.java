@@ -1,4 +1,4 @@
-package Douban;
+package Trash;
 
 import java.util.LinkedList;
 import java.util.Random;

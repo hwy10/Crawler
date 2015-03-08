@@ -45,24 +45,32 @@ public class Client {
 	HttpClientContext context;
 	public String proxy;
 	
-	public Client() {
+	public Client(TaskSetting req) {
 		client=new DefaultHttpClient();
 		context=HttpClientContext.create();
-		client.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.RFC_2109);
+		client.getParams().setParameter(ClientPNames.COOKIE_POLICY, req.cookiePolicy);
 		CookieStore cookie=new BasicCookieStore();
 		context.setCookieStore(cookie);
 		
-		Random random=new Random();
-		int pid=random.nextInt(Config.ProxyIP.size());
-		this.proxy=Config.ProxyIP.get(pid)+":"+Config.ProxyPort.get(pid);
-		HttpHost proxy = new HttpHost(Config.ProxyIP.get(pid),Config.ProxyPort.get(pid));  
-		client.getParams().setParameter(ConnRouteParams.DEFAULT_PROXY, proxy); 
+		if (req.proxyType.equals("local")){
+			this.proxy="local";
+		}else if (req.proxyType.split(":").length==2){
+			this.proxy=req.proxyType;
+			String []part=this.proxy.split(":");
+			HttpHost proxy = new HttpHost(part[0],Integer.valueOf(part[1]));  
+			client.getParams().setParameter(ConnRouteParams.DEFAULT_PROXY, proxy);
+		}else {
+			this.proxy=ProxyBank.getProxy(-1);
+			String []part=this.proxy.split(":");
+			if (part.length!=2) return;
+			HttpHost proxy = new HttpHost(part[0],Integer.valueOf(part[1]));  
+			client.getParams().setParameter(ConnRouteParams.DEFAULT_PROXY, proxy);
+		}
 	}
 	
 	public boolean saveImg(String url,String path){
 		try{
 			HttpGet get=new HttpGet(url);
-			
 			HttpResponse res=client.execute(get,context);
 			HttpEntity entity=res.getEntity();
 			if (entity != null) { 
@@ -71,7 +79,7 @@ public class Client {
 			    return true;
 			}
 		}catch(Exception ex){
-			ex.printStackTrace();
+			Logger.addFull("Client.saveImage\t"+ex.toString());
 		}
 		return false;
 	}
@@ -91,6 +99,7 @@ public class Client {
 			}
 			return result.toString();
 		}catch(Exception ex){
+			Logger.addFull("Client.getContent\t"+ex.toString());
 		}
 		return "";
 	}
@@ -116,6 +125,7 @@ public class Client {
 			}
 			return result.toString();
 		}catch (Exception ex){
+			Logger.addFull("Client.sendPost\t"+ex.toString());
 		}
 		return "";
 	}

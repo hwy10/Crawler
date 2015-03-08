@@ -1,4 +1,4 @@
-package Douban;
+package Trash;
 
 import java.awt.print.Printable;
 import java.sql.*;

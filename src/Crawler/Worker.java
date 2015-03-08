@@ -10,40 +10,83 @@ import org.apache.http.conn.params.ConnRouteParams;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import com.sun.org.apache.xerces.internal.impl.xpath.XPath.Step;
+
+import DBConnector.WeiboDB;
 
 public class Worker extends Thread{
-	private Client client;
-	private Task task;
-	private String wid;
-	private int cnt;
+	public Client client;
+	public Task task;
+	public String taskName;
+	public String wid;
+	public int cnt;
 	public String curStatus;
+	public String XXX;
 	
 	public Worker(String wid,String task) {
 		this.wid=wid;
 		try{
+			taskName=task;
 			this.task=(Task)Class.forName("Tasks."+task).newInstance();
 		}catch (Exception ex){
-			System.err.println("Invalid Task Name");
 		}
 	}
 	
 	public void run(){
 		cnt=0;
-		for (;;)
-		try{
-			client=new Client();
-			status();
-			if (task.InitialCheck(wid,client)){
-				System.out.println(wid+"\tInitial Passed");
-				for (;task.run(this,client);cnt++)
-					Thread.sleep(Config.restTime);
-			}
-		}catch (Exception ex) {
-			ex.printStackTrace();
+		if (task==null) {
+			this.curStatus="Invalid Task Name";
+			Logger.add(wid+"---Invalid Task Name");
+			return;
 		}
-	}
-	
-	public void status(){
-		System.out.println(wid+"\t"+client.proxy+"\t"+curStatus+"\t#output\t"+cnt);
+		if (!task.superInit(this)){
+			Logger.add(wid+"---Super Init Failed");
+		}
+		
+		TaskSetting setting=task.clientRequest();
+		if (setting==null) {
+			this.curStatus="Invalid Task Setting";
+			Logger.add(wid+"---Invalid Task Setting");
+			return;
+		}
+		
+		Logger.add(wid+"---start");
+		curStatus="";
+		
+		int qcnt=0;
+		client=new Client(setting);
+		if (client.proxy.equals("Invalid")) return;
+		
+		for (;;){
+			try{
+				String message=task.InitialCheck(this,client);
+				if (message.length()==0){
+					curStatus="Initial Passed";
+					Logger.add(wid+"---Initial Passed");
+					for (;;cnt++){
+						message=task.run(this,client);
+						if (message.length()>0) break;
+					}
+				}
+				
+				Logger.add(wid+"---"+message);
+				
+				if (message.equals("Network Error")){
+					if (qcnt==0&&setting.reportProxy) ProxyBank.report(client.proxy.split(":")[0]);
+					curStatus="";
+					client=new Client(setting);
+					if (client.proxy.equals("Invalid")) return;
+				} else if (message.equals("Restart")){
+				} else break;
+			}catch (Exception ex) {
+				ex.printStackTrace();
+//				Logger.add(wid+"---"+ex.toString());
+				break;
+			}
+			try{
+				Thread.sleep(Config.restTime);
+			}catch (Exception ex){}
+		}
+		task.releaseResources();
 	}
 }
