@@ -11,7 +11,7 @@ public class Config {
 	public static int restTime=1000;
 	public static int guiUpdateInterval=5;
 	
-	public static String Task="WeiboUser";
+	public static String Task="DoubanUser";
 	
 	public static String cookie=CookiePolicy.BROWSER_COMPATIBILITY;
 	

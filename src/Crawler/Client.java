@@ -60,7 +60,7 @@ public class Client {
 			HttpHost proxy = new HttpHost(part[0],Integer.valueOf(part[1]));  
 			client.getParams().setParameter(ConnRouteParams.DEFAULT_PROXY, proxy);
 		}else {
-			this.proxy=ProxyBank.getProxy(-1);
+			this.proxy=ProxyBank.getProxy(req.proxyLimit);
 			String []part=this.proxy.split(":");
 			if (part.length!=2) return;
 			HttpHost proxy = new HttpHost(part[0],Integer.valueOf(part[1]));  

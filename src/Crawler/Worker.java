@@ -55,7 +55,7 @@ public class Worker extends Thread{
 		
 		int qcnt=0;
 		client=new Client(setting);
-		if (client.proxy.equals("Invalid")) return;
+		if (client.proxy.equals("No_Available_Proxy")) return;
 		
 		for (;;){
 			try{
@@ -65,18 +65,27 @@ public class Worker extends Thread{
 					Logger.add(wid+"---Initial Passed");
 					for (;;cnt++){
 						message=task.run(this,client);
+						if (message.equals("Queue Empty")){
+							curStatus="###Waiting for Jobs";
+							Thread.sleep(1000*60);
+						}
 						if (message.length()>0) break;
+						try{
+							Thread.sleep(1000);
+						}catch (Exception ex){}
 					}
 				}
 				
 				Logger.add(wid+"---"+message);
 				
 				if (message.equals("Network Error")){
-					if (qcnt==0&&setting.reportProxy) ProxyBank.report(client.proxy.split(":")[0]);
+					if (qcnt==0) ProxyBank.report(client.proxy);
 					curStatus="";
+					
+					ProxyBank.releaseProxy(client.proxy);
 					client=new Client(setting);
-					if (client.proxy.equals("Invalid")) return;
-				} else if (message.equals("Restart")){
+					if (client.proxy.equals("No_Available_Proxy")) return;
+				} else if (message.startsWith("Restart")){
 				} else break;
 			}catch (Exception ex) {
 				ex.printStackTrace();

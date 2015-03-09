@@ -4,7 +4,7 @@ Weibo	cila819@163.com	wwee13
 Weibo	wenlu2622571@163.com	wwee13
 Weibo	he224522@163.com	wwee13
 Weibo	a9108g2@gmail.com	cat12321
-ban	Weibo::a9108g2@gmail.com
+ban	Weibo::jing75586935@163.com
 ban	Weibo::wenlu2622571@163.com
 ban	Weibo::he224522@163.com
 ban	Weibo::ji570207@163.com

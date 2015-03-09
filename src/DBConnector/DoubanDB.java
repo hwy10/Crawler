@@ -1,4 +1,4 @@
-package Trash;
+package DBConnector;
 
 import java.awt.print.Printable;
 import java.sql.*;
@@ -6,16 +6,22 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class DBconnector {
+public class DoubanDB {
 	Connection conn;
-	public DBconnector(){
-		try{
-			Class.forName("com.mysql.jdbc.Driver");
-			conn=DriverManager.getConnection(
-					"jdbc:mysql://172.16.7.85:3306/douban?characterEncoding=utf8",
-					"crawler","crawler");
-		}catch (Exception ex){
-			ex.printStackTrace();
+	public DoubanDB(){
+		for (;;){
+			try{
+				Class.forName("com.mysql.jdbc.Driver");
+				conn=DriverManager.getConnection(
+						"jdbc:mysql://172.16.7.85:3306/douban?characterEncoding=utf8",
+						"crawler","crawler");
+				return;
+			}catch (Exception ex){
+				ex.printStackTrace();
+				try{
+					Thread.sleep(1000);
+				}catch (Exception e){}
+			}
 		}
 	}
 	public void close(){
@@ -84,8 +90,8 @@ public class DBconnector {
 		return res;
 	}
 	
-	public User getUser(int uid){
-		User res=new User();
+	public DoubanUser getUser(int uid){
+		DoubanUser res=new DoubanUser();
 		try{
 			String cmd="SELECT uid,username,displayname,location,"
 					+"description,weiboid,crawltag FROM `user` WHERE uid="+uid;
@@ -97,8 +103,8 @@ public class DBconnector {
 		}
 		return res;
 	}
-	private User extractUser(ResultSet rs) throws SQLException{
-		User user=new User();
+	private DoubanUser extractUser(ResultSet rs) throws SQLException{
+		DoubanUser user=new DoubanUser();
 		user.uid=rs.getInt(1);
 		user.username=rs.getString(2);
 		user.displayname=rs.getString(3);
@@ -133,3 +139,5 @@ public class DBconnector {
 		}
 	}
 }
+
+

@@ -55,11 +55,13 @@ class ButtonEditor extends DefaultCellEditor {
 	    	if (label.startsWith("http")){
 	    		input.setText(label);
 	    	}else{ 
-			      String cmd[]=label.split("-");
-			      if (cmd[1].equals("Start"))
-			    	  core.execute("run "+cmd[0]);
-			      else if (cmd[1].equals("Stop"))
-			    	  core.execute("stop "+cmd[0]);
+			      try{
+			    	  String cmd[]=label.split("-");
+				      if (cmd[1].equals("Start"))
+				    	  core.execute("run "+cmd[0]);
+				      else if (cmd[1].equals("Stop"))
+				    	  core.execute("stop "+cmd[0]);
+			      }catch (Exception ex){}
 			    }
 			  }
 	    isPushed = false;

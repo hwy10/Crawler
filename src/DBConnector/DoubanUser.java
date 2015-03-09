@@ -1,6 +1,5 @@
-package Trash;
-
-public class User {
+package DBConnector;
+public class DoubanUser {
 	public int uid;
 	public String username;
 	public String displayname;

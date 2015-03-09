@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.cqz.dm.UUAPI;
 import com.sun.java.swing.plaf.windows.resources.windows;
 
 import Gui.MainWindow;
@@ -20,12 +21,16 @@ public class Control {
 	}
 	
 	public void init(){
+		
+//		UUAPI.reportError("463814947");
+		
 		ProxyBank.loadProxies();
+		ProxyBank.proxyLoader();
 		UserBank.load();
 		
 		updateNWorker(1);
 		
-//		Guard guard=new Guard(this);guard.start();
+		Guard guard=new Guard(this);guard.start();
 	}
 	
 	public void execute(String command){
@@ -63,6 +68,7 @@ public class Control {
 		}catch (Exception ex){
 			ex.printStackTrace();
 		}
+		window.updateGUI();
 	}
 	
 	public void updateNWorker(int num){

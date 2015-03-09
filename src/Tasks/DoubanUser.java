@@ -14,22 +14,20 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.message.BasicNameValuePair;
 
-import Trash.ClientWrapper;
-import Trash.DBconnector;
 import BasicOps.FileOps;
 import Crawler.Client;
 import Crawler.Config;
+import Crawler.Logger;
+import Crawler.ProxyBank;
 import Crawler.TaskSetting;
 import Crawler.Worker;
+import DBConnector.DoubanDB;
+import DBConnector.WeiboDB;
 
-public class Douban extends Crawler.Task{
+public class DoubanUser extends Crawler.Task{
 	private TaskSetting req;
 	@Override
 	public TaskSetting clientRequest() {
-		if (req!=null) return req;
-		req=new TaskSetting();
-		req.proxyType="";
-		req.cookiePolicy=CookiePolicy.RFC_2109;
 		return req;
 	}
 	@Override
@@ -39,14 +37,21 @@ public class Douban extends Crawler.Task{
 
 	@Override
 	public String run(Worker worker,Client client) {
-		DBconnector conn=new DBconnector();
+		DoubanDB conn=new DoubanDB();
 		int nxtId=conn.getNextUser();
-		if (nxtId==-1) return "Douban Error #1";
+		conn.close();
+		if (nxtId==-1) return "Queue Empty";
 		
 		worker.curStatus="user_"+nxtId;
 				
 		String homepage=client.getContent("http://m.douban.com/people/"+nxtId+"/about");
 		FileOps.SaveFile("D:\\cxz\\rawdata\\douban\\userhomepage\\"+nxtId, homepage.length()+homepage);
+		
+		String username=extractUsername(homepage);
+		if (username.equals("")) {
+			Logger.add(worker.wid+"---Unknown Username");
+			return "Network Error";
+		}
 
 		LinkedList<Integer> friends=new LinkedList<Integer>();
 		
@@ -57,7 +62,7 @@ public class Douban extends Crawler.Task{
 			FileOps.createDir("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId);
 			FileOps.SaveFile("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId+"\\"+i, cur);
 			int ncur=0;
-			if (cur.contains("你在豆瓣的注册密码")) return "Douban Error #2";
+			if (cur.contains("你在豆瓣的注册密码")) return "Restart";
 			Matcher matcher=Pattern.compile("<a href=\"/people/(.*?)/").matcher(cur);
 			for (;matcher.find();){
 				int id=Integer.valueOf(matcher.group(1));
@@ -68,14 +73,15 @@ public class Douban extends Crawler.Task{
 			if (ncur==0) break;
 		}
 		
-		String username=extractUsername(homepage);
-		if (username.equals("")) return "Douban Error #3";
 		worker.curStatus="###user_"+nxtId+" #friends "+friends.size()+"   "+username;
 		
 		String location=extractLocation(homepage);
 		String description=extractDescription(homepage);
 		String displayName=extractDisplay(homepage);
 		
+		addWeiboLink(nxtId,description);
+		
+		conn=new DoubanDB();
 		for (int i=0;i<friends.size();i++){
 			conn.addFriend(nxtId,friends.get(i));
 			conn.insertUser(friends.get(i));
@@ -83,6 +89,7 @@ public class Douban extends Crawler.Task{
 		conn.updateUser(nxtId,username,displayName,location,description,"1");
 		
 		conn.close();
+		Logger.add(worker.wid+"---Finished: "+username+" "+displayName);
 		return "";
 	}
 
@@ -90,27 +97,38 @@ public class Douban extends Crawler.Task{
 	public String login(Worker worker,Client client) {
 		try{
 			String content=client.getContent("http://m.douban.com/login");
+			if (content.length()==0) return "Network Error";
 			Matcher matcher=Pattern.compile("/captcha/(.*?)/").matcher(content);
-			matcher.find();
-			String capId=matcher.group(1);
-			String capsol;
+			String capId="";
+			if (matcher.find())
+				capId=matcher.group(1);
+			else {
+				System.out.println(content);
+				return "Network Error";
+			}
+			String capsol[];
 			String imgdir="http://m.douban.com/captcha/"+capId+"/?size=m";
-			if (!client.saveImg(imgdir,"temp\\"+worker.wid+"imgcode.jpg")) return "Douban Error #5";
+			if (!client.saveImg(imgdir,"temp\\"+worker.wid+"imgcode.jpg")) return "Network Error";
 			capsol=com.cqz.dm.CodeReader.getImgCode("temp\\"+worker.wid+"imgcode.jpg", 3008);
 
 			LinkedList<NameValuePair> params=new LinkedList<NameValuePair>();
-			params.add(new BasicNameValuePair("form_email", ""));
-			params.add(new BasicNameValuePair("form_password", ""));
-			params.add(new BasicNameValuePair("captcha-solution", capsol));
+			params.add(new BasicNameValuePair("form_email", "hijack2004@126.com"));
+			params.add(new BasicNameValuePair("form_password", "cat12321"));
+			params.add(new BasicNameValuePair("captcha-solution", capsol[1]));
 			params.add(new BasicNameValuePair("captcha-id",capId));
 			params.add(new BasicNameValuePair("user_login", "登录"));
 			
 			String res=client.sendPost("http://m.douban.com/login",params);
 			
 			if (res.contains("you should be redirected automatically.")) return "";
+			else {
+				Logger.tofile(capsol[0]);
+				return "Restart";
+			}
 		}catch (Exception ex){
+			ex.printStackTrace();
+			return ex.toString();
 		}
-		return "Douban Error #7";
 	}
 
 	
@@ -140,11 +158,35 @@ public class Douban extends Crawler.Task{
 	}
 	@Override
 	public void releaseResources() {
-		// TODO Auto-generated method stub
-		
 	}
 	@Override
 	public boolean superInit(Worker worker) {
+		req=new TaskSetting();
+		req.proxyType="";
+		req.cookiePolicy=CookiePolicy.RFC_2109;
+		req.proxyLimit=3;
 		return true;
+	}
+	
+	public void addWeiboLink(int uid,String des){
+		String weiboId=null;
+		Matcher wlink=Pattern.compile("weibo.com/(\\w*)").matcher(des);
+		if (wlink.find()) weiboId=wlink.group(1);
+		Matcher wulink=Pattern.compile("weibo.com/u/(\\w*)").matcher(des);
+		if (wulink.find()) weiboId=wulink.group(1);
+		Matcher tlink=Pattern.compile(".sina.com.cn/(\\w*)").matcher(des);
+		if (tlink.find()) weiboId=tlink.group(1);
+		Matcher blink=Pattern.compile(".sina.com.cn/u/(\\w*)").matcher(des);
+		if (blink.find()) weiboId=blink.group(1);
+		wlink=Pattern.compile("sina.com/(\\w*)").matcher(des);
+		if (wlink.find()) weiboId=wlink.group(1);
+		if (weiboId!=null){
+			WeiboDB weiboconn=new WeiboDB();
+			weiboconn.addQueue(weiboId);
+			weiboconn.close();
+			DoubanDB conn=new DoubanDB();
+			conn.updateWeiboId(weiboId,uid);
+			conn.close();
+		}
 	}
 }

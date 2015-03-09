@@ -8,6 +8,7 @@ import java.sql.Statement;
 
 public class WeiboDB {
 	Connection conn;
+	private static String lock="lock";
 	public WeiboDB(){
 		try{
 			Class.forName("com.mysql.jdbc.Driver");
@@ -28,9 +29,11 @@ public class WeiboDB {
 	
 	public void updateTag(String ori,String tag){
 		try{
-			String cmd="update `userqueue` set crawltag='"+tag+"' where name='"+ori+"'";
-			Statement stat=conn.createStatement();
-			stat.executeUpdate(cmd);
+			synchronized (lock) {
+				String cmd="update `userqueue` set crawltag='"+tag+"' where name='"+ori+"'";
+				Statement stat=conn.createStatement();
+				stat.executeUpdate(cmd);				
+			}
 		}catch (Exception ex){
 			ex.printStackTrace();
 		}
@@ -58,7 +61,8 @@ public class WeiboDB {
 			stat.setString(1, userid);
 			stat.execute();
 		}catch (Exception ex){
-			ex.printStackTrace();
+			if (!ex.toString().contains("Duplicate"))
+				ex.printStackTrace();
 		}
 	}
 	
@@ -72,20 +76,23 @@ public class WeiboDB {
 			stat.setString(3, content);
 			stat.execute();
 		}catch (Exception ex){
-			ex.printStackTrace();
+			 if (!ex.toString().contains("Duplicate")&&!ex.toString().contains("column \'content\'"))
+				ex.printStackTrace();
 		}
 	}
 	
 	public String getNextQueue(String tag,String newTag){
 		try{
-			String cmd="select name from `userqueue` where crawltag='"+tag+"' order by id limit 1";
-			Statement stat=conn.createStatement();
-			ResultSet rs=stat.executeQuery(cmd);
-			if (rs.next()) {
-				String res=rs.getString(1);
-				cmd="update `userqueue` set crawltag='"+newTag+"' where `name`='"+res+"'";
-				stat.executeUpdate(cmd);
-				return res;
+			synchronized (lock) {
+				String cmd="select name from `userqueue` where crawltag='"+tag+"' order by id limit 1";
+				Statement stat=conn.createStatement();
+				ResultSet rs=stat.executeQuery(cmd);
+				if (rs.next()) {
+					String res=rs.getString(1);
+					cmd="update `userqueue` set crawltag='"+newTag+"' where `name`='"+res+"'";
+					stat.executeUpdate(cmd);
+					return res;
+				}
 			}
 		}catch (Exception ex){
 			ex.printStackTrace();

@@ -1,6 +1,8 @@
 package Crawler;
 
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.LinkedList;
@@ -17,6 +19,16 @@ public class Logger {
 	public static MainWindow window=null;
 	private static int MAXLOG=200;
 	private static BufferedWriter logfile;
+	private static BufferedWriter out;
+	
+	public static void tofile(String log){
+		try{
+			if (out==null)
+				out=new BufferedWriter(new FileWriter(new File("log")));
+			out.write(log+"\n");
+			out.flush();
+		}catch (Exception ex){}
+	}
 	
 	public static void add(String log) {
 		synchronized (logs) {

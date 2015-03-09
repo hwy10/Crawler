@@ -75,10 +75,10 @@ public class MainWindow {
 	private JScrollPane scrollPane;
 	
 	private String[] workerTableHeader=new String[] {
-			"Worker Id","Proxy","Account","Task","Current Status","Code","#Output","Action"
+			"ID","Proxy","Account","Task","Status","Progress","Code","#","Action"
 		};
 	private String[] proxyTableHeader=new String[] {
-			"IP","Port","#Report"
+			"Address","#Assignment","#Report"
 		};
 	private JList logList;
 	private JPanel logPanel;
@@ -350,7 +350,7 @@ public class MainWindow {
 	}
 	
 	public void updateWorkerTable(){
-		Object[][] content=new Object[Config.NWorker][8];
+		Object[][] content=new Object[Config.NWorker][9];
 		for (int i=0;i<Config.NWorker;i++){
 			Worker worker=Control.workers.get(i);
 			if (worker!=null){
@@ -358,38 +358,41 @@ public class MainWindow {
 					Control.workers.set(i, null);
 					worker=null;
 				}else{
-					content[i][0]=worker.wid;
+					content[i][0]=worker.wid.split("_")[1];
 					try{content[i][1]=worker.client.proxy;}catch (Exception ex){}
 					try{content[i][2]=worker.task.username;}catch (Exception ex){}
 					content[i][3]=worker.taskName;
 					content[i][4]=worker.curStatus;
-					content[i][5]=worker.XXX;
-					content[i][6]=worker.cnt;
-					content[i][7]=i+"-Stop";
+					content[i][5]=20;
+					content[i][6]=worker.XXX;
+					content[i][7]=worker.cnt;
+					content[i][8]=i+"-Stop";
 				}
 			}
 			if (worker==null){
-				content[i][0]="IDLE WORKER";
-				content[i][7]=i+"-Start";
+				content[i][0]="#";
+				content[i][8]=i+"-Start";
 			}
 			
 		}
 		
 		workerTable.setModel(new DefaultTableModel(content,workerTableHeader));
 		workerTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-		workerTable.getColumnModel().getColumn(0).setPreferredWidth(150);
+		workerTable.getColumnModel().getColumn(0).setPreferredWidth(50);
 		workerTable.getColumnModel().getColumn(1).setPreferredWidth(200);
 		workerTable.getColumnModel().getColumn(2).setPreferredWidth(100);
 		workerTable.getColumnModel().getColumn(3).setPreferredWidth(100);
-		workerTable.getColumnModel().getColumn(4).setPreferredWidth(500);
-		workerTable.getColumnModel().getColumn(5).setPreferredWidth(100);
+		workerTable.getColumnModel().getColumn(4).setPreferredWidth(300);
+		workerTable.getColumnModel().getColumn(5).setPreferredWidth(200);
 		workerTable.getColumnModel().getColumn(6).setPreferredWidth(100);
-		workerTable.getColumnModel().getColumn(7).setPreferredWidth(150);
+		workerTable.getColumnModel().getColumn(7).setPreferredWidth(50);
+		workerTable.getColumnModel().getColumn(8).setPreferredWidth(150);
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment( JLabel.CENTER );
-		for (int i=0;i<7;i++)
+		for (int i=0;i<9;i++)
 			workerTable.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
 		workerTable.getColumn("Action").setCellRenderer(new ButtonRenderer());
+		workerTable.getColumn("Progress").setCellRenderer(new ProgressBarRenderer());
 		workerTable.getColumn("Action").setCellEditor(
 		        new ButtonEditor(new JCheckBox(),core,commandText));
 		workerTable.getColumn("Code").setCellEditor(
@@ -397,18 +400,18 @@ public class MainWindow {
 	}
 	
 	public void updateProxyTable(){
-		Object[][] content=new Object[ProxyBank.ProxyIP.size()][3];
-		for (int i=0;i<ProxyBank.ProxyIP.size();i++){
-			content[i][0]=ProxyBank.ProxyIP.get(i);
-			content[i][1]=ProxyBank.ProxyPort.get(i);
-			content[i][2]="0";
-			if (ProxyBank.badProxy.containsKey(ProxyBank.ProxyIP.get(i)))
-				content[i][2]=""+ProxyBank.badProxy.get(ProxyBank.ProxyIP.get(i));
+		Object[][] content=new Object[ProxyBank.proxy.size()][3];
+		int id=0;
+		for (String proxy:ProxyBank.proxy){
+			content[id][0]=proxy;
+			content[id][1]=ProxyBank.assignment.get(proxy);
+			content[id][2]=ProxyBank.badProxy.get(proxy);
+			id++;
 		}
 		
 		proxyTable.setModel(new DefaultTableModel(content,proxyTableHeader));
 		proxyTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-		proxyTable.getColumnModel().getColumn(0).setPreferredWidth(100);
+		proxyTable.getColumnModel().getColumn(0).setPreferredWidth(200);
 		proxyTable.getColumnModel().getColumn(1).setPreferredWidth(50);
 		proxyTable.getColumnModel().getColumn(2).setPreferredWidth(50);
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();

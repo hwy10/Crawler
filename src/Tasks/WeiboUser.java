@@ -58,11 +58,20 @@ public class WeiboUser extends Task{
 		try{
 			WeiboDB conn=new WeiboDB();
 			String oid=conn.getNextQueue("0","-1");
+			conn.close();
+			if (oid.length()==0) return "Queue Empty";
 			worker.curStatus="ord:"+oid;
 			
 			String content="";
 			for (int i=0;i<5;i++){
 				content=client.getContent("http://weibo.cn/"+oid);
+				if (content.contains("如果没有自动跳转")){
+					Logger.add(worker.wid+"---"+oid+" not exist");
+					conn=new WeiboDB();
+					conn.updateTag(oid, "-2");
+					conn.close();
+					return "";
+				}
 				if (content.contains("加入新浪微博,分享新鲜的事")){
 					if (i==4) return "Network Error";
 					login(worker, client);
@@ -74,9 +83,11 @@ public class WeiboUser extends Task{
 			if (!matcher.find()) {
 				if (content.contains("为您解答使用问题")){
 					UserBank.reportUser("Weibo", username);
-					return "Restart";
+					return "Restart Error #1";
 				}
-				return "";
+				System.out.println(content);
+				Thread.sleep(1000000);
+				return "Restart Error #2";
 			}
 			String uid=matcher.group(1);
 			
@@ -98,7 +109,9 @@ public class WeiboUser extends Task{
 			matcher=Pattern.compile("微博\\[(\\d*)\\]").matcher(content);
 			if (matcher.find()) weibo=Integer.valueOf(matcher.group(1));
 			
+			conn=new WeiboDB();
 			conn.insertUser(uid, displayname, weibo, followee, follower);
+			conn.close();
 			
 			String path="D:\\cxz\\rawdata\\weibo\\user\\";
 			
@@ -107,22 +120,25 @@ public class WeiboUser extends Task{
 				dir.mkdir();
 			FileOps.SaveFile(path+uid+"\\1", content);
 			
-			parseWeibo(uid,content,conn);
+			parseWeibo(uid,content);
 			
 			for (int i=2;i<20;i++){
 				worker.curStatus+="#";
 				File f=new File(path+uid+"\\"+i);
-				if (f.exists()) content=FileOps.LoadFilebyLine(f.getAbsolutePath()).get(0);
+				if (f.exists()&&FileOps.LoadFilebyLine(f.getAbsolutePath()).size()>0)
+					content=FileOps.LoadFilebyLine(f.getAbsolutePath()).get(0);
 				else {
 					content=client.getContent("http://weibo.cn/"+uid+"?page="+i);
 					FileOps.SaveFile(path+uid+"\\"+i, content);
 				}
-				parseWeibo(uid,content,conn);
+				parseWeibo(uid,content);
 				try{
 					Thread.sleep(3000);
 				}catch (Exception ex){}
 			}
+			conn=new WeiboDB();
 			conn.updateTag(oid,"1");
+			conn.close();
 			Logger.add(worker.wid+"---Finished "+uid+"  "+displayname);
 			return "";
 		}catch (Exception ex){
@@ -130,7 +146,8 @@ public class WeiboUser extends Task{
 		}
 	}
 	
-	private void parseWeibo(String uid,String content,WeiboDB conn){
+	private void parseWeibo(String uid,String content){
+		WeiboDB conn=new WeiboDB();
 		try{
 			Matcher matcher=Pattern.compile("<div class=\"c\" id=\"(.*?)\">([\\S\\s]*?)<div class=\"s\"></div>").matcher(content);
 			for (;matcher.find();){
@@ -139,6 +156,7 @@ public class WeiboUser extends Task{
 		}catch (Exception ex){
 			ex.printStackTrace();
 		}
+		conn.close();
 	}
 	
 	@Override
