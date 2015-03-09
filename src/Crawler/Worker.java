@@ -22,6 +22,7 @@ public class Worker extends Thread{
 	public int cnt;
 	public String curStatus;
 	public String XXX;
+	public int progress=-1;
 	
 	public Worker(String wid,String task) {
 		this.wid=wid;
@@ -59,6 +60,7 @@ public class Worker extends Thread{
 		
 		for (;;){
 			try{
+				progress=-1;
 				String message=task.InitialCheck(this,client);
 				if (message.length()==0){
 					curStatus="Initial Passed";

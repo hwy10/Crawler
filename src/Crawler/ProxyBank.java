@@ -12,8 +12,20 @@ import BasicOps.FileOps;
 
 public class ProxyBank {
 	public static HashSet<String> proxy=new HashSet<String>();
+	public static HashSet<String> blacklist=new HashSet<String>();
 	public static HashMap<String,Integer> badProxy=new HashMap<String, Integer>();
 	public static HashMap<String,Integer> assignment=new HashMap<String, Integer>();
+	
+	
+	public static int size(){
+		return proxy.size();
+	}
+	public static int inuse(){
+		int cnt=0;
+		for (Integer i:assignment.values())
+			cnt+=(i>0)?1:0;
+		return cnt;
+	}
 	
 	public static void proxyLoader(){
 		Thread loader=new ProxyLoader();
@@ -46,7 +58,7 @@ public class ProxyBank {
 		for (String row:BasicOps.FileOps.LoadFilebyLine("proxybank.txt")){
 			String[] sep=row.split("\t");
 			if (sep.length==2)
-				proxy.add(sep[0]+":"+sep[1]);
+				blacklist.add(sep[1]);
 			else proxy.add(sep[0]);
 		}
 	}
@@ -55,6 +67,7 @@ public class ProxyBank {
 			badProxy.put(p,1);
 		else badProxy.put(p,badProxy.get(p)+1);
 		if (badProxy.get(p)>1) {
+			blacklist.add(p);
 			removeProxy(p);
 			Logger.add("Proxy Removed : "+p);
 		}
@@ -62,11 +75,17 @@ public class ProxyBank {
 	public static void saveProxies(){
 		LinkedList<String> content=new LinkedList<String>();
 		content.addAll(proxy);
+		for (String p:blacklist)
+			content.add("ban\t"+p);
 		FileOps.SaveFile("proxybank.txt", content);
 	}
-	public static void addProxy(String ip,int port){
+	public static void addProxy(String p){
 		if (proxy.size()>10000) return;
-		proxy.add(ip+":"+port);
+		if (blacklist.contains(p)) return;
+		proxy.add(p);
+	}
+	public static void addProxy(String ip,int port){
+		addProxy(ip+":"+port);
 	}
 	public static void removeProxy(String p){
 		proxy.remove(p);
@@ -84,22 +103,49 @@ class ProxyLoader extends Thread{
 	@Override
 	public void run() {
 		for (;;){
+			//Source #3
 			try{
-				for (int i=1;i<12;i++){
+				for (int i=1;i<100;i++){
+					try {
+						String content=NetworkConnect.send2Get("http://proxy-list.org/english/index.php?p="+i,"","");
+						System.out.println(content);
+						Matcher matcher=Pattern.compile("<li class=\"proxy\">(.*?)</li>").matcher(content);
+						for (;matcher.find();){
+							ProxyBank.addProxy(matcher.group(1));
+						}
+						Thread.sleep(3000);
+					} catch (Exception e) {
+					}
+				}
+			}catch (Exception ex){}
+			//Source #2
+			try{
+				String content=NetworkConnect.send2Get("http://www.free-proxy-list.net", "", "");
+				Matcher matcher=Pattern.compile("<td>(\\d*\\.\\d*\\.\\d*\\.\\d*)</td><td>(\\d*)</td>").matcher(content);
+				for (;matcher.find();){
+					ProxyBank.addProxy(matcher.group(1), Integer.valueOf(matcher.group(2)));
+				}
+			}catch (Exception ex){}
+
+			//Source #1
+			try{
+				for (int i=1;i<100;i++){
 					try {
 						String content=NetworkConnect.send2Get("http://www.proxy.com.ru/list_"+i+".html","","");
 						Matcher matcher=Pattern.compile("<td>(\\d*\\.\\d*\\.\\d*\\.\\d*)</td><td>(\\d*)</td>").matcher(content);
 						for (;matcher.find();){
 							ProxyBank.addProxy(matcher.group(1), Integer.valueOf(matcher.group(2)));
 						}
-							
+						Thread.sleep(3000);
 					} catch (Exception e) {
 					}
 				}
 			}catch (Exception ex){
 			}
+			
+			ProxyBank.saveProxies();
 			try {
-				Thread.sleep(1000*60);
+				Thread.sleep(1000*60*5);
 			} catch (Exception e) {
 			}
 		}

@@ -19,8 +19,10 @@ public class Guard extends Thread{
 				if (last.size()==Config.NWorker)
 					for (int i=0;i<Config.NWorker;i++){
 						try{
-							if (last.get(i).equals(Control.workers.get(i).curStatus)
-									&&!last.get(i).startsWith("###")){
+							String cur=Control.workers.get(i).curStatus
+									+Control.workers.get(i).progress
+									+Control.workers.get(i).cnt;
+							if (last.get(i).equals(cur)&&!last.get(i).startsWith("###")){
 								Logger.add("Guard : Restart "+Control.workers.get(i).wid);
 								core.stopWorker(i);
 								core.startWorker(i);
@@ -30,8 +32,12 @@ public class Guard extends Thread{
 					}
 				last=new LinkedList<String>();
 				for (int i=0;i<Config.NWorker;i++){
-					if (Control.workers.get(i)!=null)
-						last.add(Control.workers.get(i).curStatus);
+					if (Control.workers.get(i)!=null){
+						String cur=Control.workers.get(i).curStatus
+								+Control.workers.get(i).progress
+								+Control.workers.get(i).cnt;
+						last.add(cur);
+					}
 					else last.add("NULL WORKER");
 				}
 				Thread.sleep(1000*60*Config.GuardInterval);

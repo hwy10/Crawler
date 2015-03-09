@@ -56,6 +56,8 @@ public class WeiboUser extends Task{
 	@Override
 	public String run(Worker worker, Client client) {
 		try{
+			worker.progress=1;
+			
 			WeiboDB conn=new WeiboDB();
 			String oid=conn.getNextQueue("0","-1");
 			conn.close();
@@ -90,8 +92,9 @@ public class WeiboUser extends Task{
 				return "Restart Error #2";
 			}
 			String uid=matcher.group(1);
-			
+
 			worker.curStatus=uid+"\t#";
+			worker.progress=5;
 			
 			String displayname="";
 			matcher=Pattern.compile("<title>(.*?)的微博</title>").matcher(content);
@@ -123,6 +126,7 @@ public class WeiboUser extends Task{
 			parseWeibo(uid,content);
 			
 			for (int i=2;i<20;i++){
+				worker.progress+=5;
 				worker.curStatus+="#";
 				File f=new File(path+uid+"\\"+i);
 				if (f.exists()&&FileOps.LoadFilebyLine(f.getAbsolutePath()).size()>0)
