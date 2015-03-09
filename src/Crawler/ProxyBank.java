@@ -66,7 +66,7 @@ public class ProxyBank {
 		if (!badProxy.containsKey(p))
 			badProxy.put(p,1);
 		else badProxy.put(p,badProxy.get(p)+1);
-		if (badProxy.get(p)>1) {
+		if (badProxy.get(p)>3) {
 			blacklist.add(p);
 			removeProxy(p);
 			Logger.add("Proxy Removed : "+p);
@@ -96,6 +96,11 @@ public class ProxyBank {
 			assignment.put(p, assignment.get(p)-1);
 		}catch (Exception ex){}
 	}
+	public static void reportGood(String p){
+		try{
+			badProxy.remove(p);
+		}catch( Exception ex){}
+	}
 }
 
 
@@ -103,49 +108,59 @@ class ProxyLoader extends Thread{
 	@Override
 	public void run() {
 		for (;;){
-			//Source #3
-			try{
-				for (int i=1;i<100;i++){
-					try {
-						String content=NetworkConnect.send2Get("http://proxy-list.org/english/index.php?p="+i,"","");
-						System.out.println(content);
-						Matcher matcher=Pattern.compile("<li class=\"proxy\">(.*?)</li>").matcher(content);
-						for (;matcher.find();){
-							ProxyBank.addProxy(matcher.group(1));
-						}
-						Thread.sleep(3000);
-					} catch (Exception e) {
-					}
-				}
-			}catch (Exception ex){}
 			//Source #2
 			try{
+				int cnt=0;
 				String content=NetworkConnect.send2Get("http://www.free-proxy-list.net", "", "");
 				Matcher matcher=Pattern.compile("<td>(\\d*\\.\\d*\\.\\d*\\.\\d*)</td><td>(\\d*)</td>").matcher(content);
 				for (;matcher.find();){
+					cnt++;
 					ProxyBank.addProxy(matcher.group(1), Integer.valueOf(matcher.group(2)));
 				}
+				Logger.add("Proxy Source #2 : "+cnt);
 			}catch (Exception ex){}
 
-			//Source #1
+			//Source #3 & #1
 			try{
 				for (int i=1;i<100;i++){
 					try {
+						int cnt=0;
+						String content=NetworkConnect.send2Get("http://proxy-list.org/english/index.php?p="+i,"","");
+						Matcher matcher=Pattern.compile("<li class=\"proxy\">(.*?)</li>").matcher(content);
+						for (;matcher.find();){
+							ProxyBank.addProxy(matcher.group(1));
+							cnt++;
+						}
+						Logger.add("Proxy Source #3 "+i+" : "+cnt);
+					} catch (Exception e) {
+					}
+					try {
+						int cnt=0;
 						String content=NetworkConnect.send2Get("http://www.proxy.com.ru/list_"+i+".html","","");
 						Matcher matcher=Pattern.compile("<td>(\\d*\\.\\d*\\.\\d*\\.\\d*)</td><td>(\\d*)</td>").matcher(content);
 						for (;matcher.find();){
+							cnt++;
 							ProxyBank.addProxy(matcher.group(1), Integer.valueOf(matcher.group(2)));
 						}
-						Thread.sleep(3000);
+						Logger.add("Proxy Source #1 "+i+" : "+cnt);
 					} catch (Exception e) {
 					}
+					try{
+						Thread.sleep(3000);
+					}catch(Exception ex){}
+				}
+			}catch (Exception ex){}
+			//Source #1
+			try{
+				for (int i=1;i<100;i++){
+					
 				}
 			}catch (Exception ex){
 			}
 			
 			ProxyBank.saveProxies();
 			try {
-				Thread.sleep(1000*60*5);
+				Thread.sleep(1000*60);
 			} catch (Exception e) {
 			}
 		}
