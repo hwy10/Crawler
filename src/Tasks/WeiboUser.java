@@ -56,26 +56,26 @@ public class WeiboUser extends Task{
 	@Override
 	public String run(Worker worker, Client client) {
 		try{
-			worker.progress=1;
+			worker.setProgress(1);
 			
 			WeiboDB conn=new WeiboDB();
 			String oid=conn.getNextQueue("0","-1");
 			conn.close();
 			if (oid.length()==0) return "Queue Empty";
-			worker.curStatus="ord:"+oid;
+			worker.updateStatus("ord:"+oid);
 			
 			String content="";
-			for (int i=0;i<5;i++){
+			for (int i=0;i<2;i++){
 				content=client.getContent("http://weibo.cn/"+oid);
 				if (content.contains("如果没有自动跳转")){
-					Logger.add(worker.wid+"---"+oid+" not exist");
+					Logger.add("Worker-"+worker.wid+"---"+oid+" not exist");
 					conn=new WeiboDB();
 					conn.updateTag(oid, "-2");
 					conn.close();
 					return "";
 				}
 				if (content.contains("加入新浪微博,分享新鲜的事")){
-					if (i==4) return "Network Error";
+					if (i==1) return "Network Error";
 					login(worker, client);
 				}
 			}
@@ -87,14 +87,14 @@ public class WeiboUser extends Task{
 					UserBank.reportUser("Weibo", username);
 					return "Restart Error #1";
 				}
-				System.out.println(content);
+				Logger.tofile(content);
 				Thread.sleep(1000000);
 				return "Restart Error #2";
 			}
 			String uid=matcher.group(1);
 
-			worker.curStatus=uid+"\t#";
-			worker.progress=5;
+			worker.updateStatus("ID : "+uid);
+			worker.setProgress(5);
 			
 			String displayname="";
 			matcher=Pattern.compile("<title>(.*?)的微博</title>").matcher(content);
@@ -126,8 +126,7 @@ public class WeiboUser extends Task{
 			parseWeibo(uid,content);
 			
 			for (int i=2;i<20;i++){
-				worker.progress+=5;
-				worker.curStatus+="#";
+				worker.setProgress(worker.progress+5);
 				File f=new File(path+uid+"\\"+i);
 				if (f.exists()&&FileOps.LoadFilebyLine(f.getAbsolutePath()).size()>0)
 					content=FileOps.LoadFilebyLine(f.getAbsolutePath()).get(0);
@@ -143,7 +142,7 @@ public class WeiboUser extends Task{
 			conn=new WeiboDB();
 			conn.updateTag(oid,"1");
 			conn.close();
-			Logger.add(worker.wid+"---Finished "+uid+"  "+displayname);
+			Logger.add("Worker-"+worker.wid+"---Finished "+uid+"  "+displayname);
 			return "";
 		}catch (Exception ex){
 			return ex.toString();
@@ -194,27 +193,31 @@ public class WeiboUser extends Task{
 				
 				if (content.contains("验证码")){
 					Logger.add(worker.wid+"---验证码");
-					Matcher macher=Pattern.compile("<img src=\"(.*?)\" alt=\"请打开图片显示\"").matcher(content);
-					if (!macher.find()) return "Weibo_Login Error #4";
-					String imgURL=macher.group(1);
-					macher=Pattern.compile("name=\"capId\" value=\"(.*?)\"").matcher(content);
-					if (!macher.find()) return "Weibo_Login Error #5";
-					String capId=macher.group(1);
-					worker.curStatus="###请输入验证码";
-					worker.XXX=imgURL;
-					for (;;){
-						try{
-							Thread.sleep(3000);
-						}catch (Exception ex){}
-						if (Control.captcha.containsKey(capId)){
-							params.add(new BasicNameValuePair("capId", capId));
-							System.out.println(capId);
-							System.out.println(URLEncoder.encode(Control.captcha.get(capId)));
-							params.add(new BasicNameValuePair("code", URLEncoder.encode(Control.captcha.get(capId))));
-							worker.XXX="";
-							break;
-						}
-					}
+					Logger.add(worker.wid+"---Report User "+username);
+					UserBank.reportUser("Weibo", username);
+					if (superInit(worker)) return "Restart";
+					else return "No Available Account";
+//					Matcher macher=Pattern.compile("<img src=\"(.*?)\" alt=\"请打开图片显示\"").matcher(content);
+//					if (!macher.find()) return "Weibo_Login Error #4";
+//					String imgURL=macher.group(1);
+//					macher=Pattern.compile("name=\"capId\" value=\"(.*?)\"").matcher(content);
+//					if (!macher.find()) return "Weibo_Login Error #5";
+//					String capId=macher.group(1);
+//					worker.curStatus="###请输入验证码";
+//					worker.XXX=imgURL;
+//					for (;;){
+//						try{
+//							Thread.sleep(3000);
+//						}catch (Exception ex){}
+//						if (Control.captcha.containsKey(capId)){
+//							params.add(new BasicNameValuePair("capId", capId));
+//							System.out.println(capId);
+//							System.out.println(URLEncoder.encode(Control.captcha.get(capId)));
+//							params.add(new BasicNameValuePair("code", URLEncoder.encode(Control.captcha.get(capId))));
+//							worker.XXX="";
+//							break;
+//						}
+//					}
 				}
 				
 				String url="http://login.weibo.cn/login/?rand="+rand+"&backURL=http%3A%2F%2Fweibo.cn&backTitle=%E6%89%8B%E6%9C%BA%E6%96%B0%E6%B5%AA%E7%BD%91&vt=4";

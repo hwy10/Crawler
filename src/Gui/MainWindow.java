@@ -77,8 +77,11 @@ public class MainWindow {
 	private JTable workerTable;
 	private JScrollPane scrollPane;
 	
+	public DefaultTableModel workerTableModel;
+	public DefaultTableModel proxyTableModel;
+	
 	private String[] workerTableHeader=new String[] {
-			"ID","Proxy","Account","Task","Status","Progress","Code","#","Action"
+			"ID","Proxy","Account","Task","Status","Progress","#","Action"
 		};
 	private String[] proxyTableHeader=new String[] {
 			"Address","#Worker","#Report"
@@ -155,7 +158,7 @@ public class MainWindow {
 			public void actionPerformed(ActionEvent e) {
 				String command=commandText.getText();
 				core.execute(command);
-				updateGUI();
+//				updateGUI();
 			}
 		});
 		lowerPanel.add(executeBtn);
@@ -170,11 +173,11 @@ public class MainWindow {
 		workerTable = new JTable();
 		scrollPane.setViewportView(workerTable);
 		workerTable.setEnabled(true);
-		workerTable.setModel(new DefaultTableModel(
-			new Object[][] {
-				
-			},workerTableHeader
-		));
+		workerTableModel=new DefaultTableModel(
+				new Object[][] {
+						
+				},workerTableHeader);
+		workerTable.setModel(workerTableModel);
 		
 		panel = new JPanel();
 		frmXuezhiCaosCrawler.getContentPane().add(panel, BorderLayout.EAST);
@@ -323,7 +326,7 @@ public class MainWindow {
 		refreshTableBtn = new JButton("Refresh");
 		refreshTableBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				updateGUI();
+				updateGUI_Full();
 			}
 		});
 		
@@ -345,46 +348,11 @@ public class MainWindow {
 		core.init();
 		GuiUpdater updater=new GuiUpdater(this);
 		updater.start();
+		
+		setGUI();
 	}
 	
-	public void updateGUI(){
-		updateWorkerTable();
-		updateProxyTable();
-		
-		lblProxyBank.setText("--- Proxy Bank ("+ProxyBank.inuse()+"/"+ProxyBank.size()+")---");
-	}
-	
-	public String workerTableLock="lock";
-	private JComboBox taskBox;
-	
-	public void updateWorkerTable(){
-		Object[][] content=new Object[Config.NWorker][9];
-		for (int i=0;i<Config.NWorker;i++){
-			Worker worker=Control.workers.get(i);
-			if (worker!=null){
-				if (!worker.isAlive()){
-					Control.workers.set(i, null);
-					worker=null;
-				}else{
-					content[i][0]=worker.wid.split("_")[1];
-					try{content[i][1]=worker.client.proxy;}catch (Exception ex){}
-					try{content[i][2]=worker.task.username;}catch (Exception ex){}
-					content[i][3]=worker.taskName;
-					content[i][4]=worker.curStatus;
-					content[i][5]=worker.progress;
-					content[i][6]=worker.XXX;
-					content[i][7]=worker.cnt;
-					content[i][8]=i+"-Stop";
-				}
-			}
-			if (worker==null){
-				content[i][0]="#";
-				content[i][8]=i+"-Start";
-			}
-			
-		}
-		
-		workerTable.setModel(new DefaultTableModel(content,workerTableHeader));
+	private void setGUI(){
 		workerTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 		workerTable.getColumnModel().getColumn(0).setPreferredWidth(50);
 		workerTable.getColumnModel().getColumn(1).setPreferredWidth(200);
@@ -392,19 +360,63 @@ public class MainWindow {
 		workerTable.getColumnModel().getColumn(3).setPreferredWidth(100);
 		workerTable.getColumnModel().getColumn(4).setPreferredWidth(300);
 		workerTable.getColumnModel().getColumn(5).setPreferredWidth(200);
-		workerTable.getColumnModel().getColumn(6).setPreferredWidth(100);
-		workerTable.getColumnModel().getColumn(7).setPreferredWidth(50);
-		workerTable.getColumnModel().getColumn(8).setPreferredWidth(150);
+		workerTable.getColumnModel().getColumn(6).setPreferredWidth(50);
+		workerTable.getColumnModel().getColumn(7).setPreferredWidth(150);
 		DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
 		centerRenderer.setHorizontalAlignment( JLabel.CENTER );
-		for (int i=0;i<9;i++)
+		for (int i=0;i<8;i++)
 			workerTable.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
 		workerTable.getColumn("Action").setCellRenderer(new ButtonRenderer());
 		workerTable.getColumn("Progress").setCellRenderer(new ProgressBarRenderer());
 		workerTable.getColumn("Action").setCellEditor(
 		        new ButtonEditor(new JCheckBox(),core,commandText));
-		workerTable.getColumn("Code").setCellEditor(
-		        new ButtonEditor(new JCheckBox(),core,commandText));	
+	}
+	
+	public void updateGUI_Full(){
+//		updateWorkerTable();
+		updateProxyTable();
+		updateGUI();
+	}
+	
+	public void updateGUI(){
+		lblProxyBank.setText("--- Proxy Bank ("+ProxyBank.inuse()+"/"+ProxyBank.size()+")---");
+		workerTable.updateUI();
+		proxyTable.updateUI();
+	}
+	
+	public String workerTableLock="lock";
+	private JComboBox taskBox;
+	
+	public void updateWorkerTable(){
+		Object[][] content=new Object[Config.NWorker][8];
+		for (int i=0;i<Config.NWorker;i++){
+			Worker worker=Control.workers.get(i);
+			if (worker!=null){
+				if (!worker.isAlive()){
+					Control.workers.set(i, null);
+					worker=null;
+				}else{
+					content[i][0]=worker.wid;
+					try{content[i][1]=worker.client.proxy;}catch (Exception ex){}
+					try{content[i][2]=worker.task.username;}catch (Exception ex){}
+					content[i][3]=worker.taskName;
+					content[i][4]=worker.curStatus;
+					content[i][5]=worker.progress;
+					content[i][6]=worker.cnt;
+					content[i][7]=i+"-Stop";
+				}
+			}
+			if (worker==null){
+				content[i][0]="#";
+				content[i][7]=i+"-Start";
+			}
+			
+		}
+		
+		workerTableModel=new DefaultTableModel(content,workerTableHeader);
+		workerTable.setModel(workerTableModel);
+		
+		
 	}
 	
 	public void updateProxyTable(){

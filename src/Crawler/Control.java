@@ -11,7 +11,7 @@ import com.sun.java.swing.plaf.windows.resources.windows;
 import Gui.MainWindow;
 
 public class Control {
-	private MainWindow window;
+	public MainWindow window;
 	
 	public static LinkedList<Worker> workers=new LinkedList<Worker>();
 	public static HashMap<String, String>captcha=new HashMap<String, String>();
@@ -68,31 +68,35 @@ public class Control {
 		}catch (Exception ex){
 			ex.printStackTrace();
 		}
-		window.updateGUI();
+//		window.updateGUI();
 	}
 	
 	public void updateNWorker(int num){
-		Config.NWorker=num;
+		Config.NWorker=Math.max(Config.NWorker, num);
 		for (;workers.size()<Config.NWorker;)
-			workers.add(null);
-		for (;workers.size()>Config.NWorker;)
+			workers.add(new Worker(this, workers.size()));
+		for (;workers.size()>Config.NWorker;){
+			stopWorker(workers.size()-1);
 			workers.removeLast();
+		}
 	}
 	
 	public void startWorker(int id){
-		if (workers.get(id)!=null&&!workers.get(id).isAlive())
-			workers.set(id, null);
-		if (workers.get(id)==null){
-			workers.set(id,new Worker("Worker_"+id, Config.Task));
+		startWorker(id,Config.Task);
+	}
+	
+	public void startWorker(int id, String task){
+		if (!workers.get(id).isAlive()||workers.get(id).kill){
+			workers.set(id, new Worker(this, id));
+			workers.get(id).setTask(task);
 			workers.get(id).start();
 		}
 	}
 	public void stopWorker(int id){
-		if (workers.get(id)!=null){
-			workers.get(id).task.releaseResources();
-			workers.get(id).stop();
-			workers.set(id, null);
-		}
+		workers.get(id).kill=true;
+		workers.get(id).stop();
+		workers.get(id).release();
+		workers.get(id).updateUI();
 	}
 	
 }

@@ -37,29 +37,38 @@ public class DoubanUser extends Crawler.Task{
 
 	@Override
 	public String run(Worker worker,Client client) {
+		worker.setProgress(1);
+
 		DoubanDB conn=new DoubanDB();
 		int nxtId=conn.getNextUser();
 		conn.close();
 		if (nxtId==-1) return "Queue Empty";
 		
-		worker.curStatus="user_"+nxtId;
+		worker.updateStatus("user_"+nxtId);
 				
 		String homepage=client.getContent("http://m.douban.com/people/"+nxtId+"/about");
 		FileOps.SaveFile("D:\\cxz\\rawdata\\douban\\userhomepage\\"+nxtId, homepage.length()+homepage);
 		
 		String username=extractUsername(homepage);
 		if (username.equals("")) {
-			Logger.add(worker.wid+"---Unknown Username");
+			Logger.add("Worker-"+worker.wid+"---Unknown Username");
 			return "Network Error";
 		}
 
 		LinkedList<Integer> friends=new LinkedList<Integer>();
 		
+		int tot=1000;
 		for (int i=1;;i++){
-			worker.curStatus="user_"+nxtId+" friends page "+i;
+			worker.updateStatus("user_"+nxtId+" friends page "+i);
 			String cur=client.getContent(
 					"http://m.douban.com/people/"+nxtId+"/contacts?page="+i);
-			FileOps.createDir("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId);
+			if (i==1){
+				Matcher matcher=Pattern.compile("<span> 1/(\\d*) </span>").matcher(cur);
+				if (matcher.find())
+					tot=Integer.valueOf(matcher.group(1));
+				FileOps.createDir("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId);
+			}
+			worker.setProgress((i*100)/tot);
 			FileOps.SaveFile("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId+"\\"+i, cur);
 			int ncur=0;
 			if (cur.contains("你在豆瓣的注册密码")) return "Restart";
@@ -73,7 +82,7 @@ public class DoubanUser extends Crawler.Task{
 			if (ncur==0) break;
 		}
 		
-		worker.curStatus="###user_"+nxtId+" #friends "+friends.size()+"   "+username;
+		worker.updateStatus("###user_"+nxtId+" #friends "+friends.size()+"   "+username);
 		
 		String location=extractLocation(homepage);
 		String description=extractDescription(homepage);
@@ -89,7 +98,7 @@ public class DoubanUser extends Crawler.Task{
 		conn.updateUser(nxtId,username,displayName,location,description,"1");
 		
 		conn.close();
-		Logger.add(worker.wid+"---Finished: "+username+" "+displayName);
+		Logger.add("Worker-"+worker.wid+"---Finished: "+username+" "+displayName);
 		return "";
 	}
 
@@ -172,11 +181,11 @@ public class DoubanUser extends Crawler.Task{
 		String weiboId=null;
 		Matcher wlink=Pattern.compile("weibo.com/(\\w*)").matcher(des);
 		if (wlink.find()) weiboId=wlink.group(1);
-		Matcher wulink=Pattern.compile("weibo.com/u/(\\w*)").matcher(des);
+		Matcher wulink=Pattern.compile("weibo.com/./(\\w*)").matcher(des);
 		if (wulink.find()) weiboId=wulink.group(1);
 		Matcher tlink=Pattern.compile(".sina.com.cn/(\\w*)").matcher(des);
 		if (tlink.find()) weiboId=tlink.group(1);
-		Matcher blink=Pattern.compile(".sina.com.cn/u/(\\w*)").matcher(des);
+		Matcher blink=Pattern.compile(".sina.com.cn/./(\\w*)").matcher(des);
 		if (blink.find()) weiboId=blink.group(1);
 		wlink=Pattern.compile("sina.com/(\\w*)").matcher(des);
 		if (wlink.find()) weiboId=wlink.group(1);

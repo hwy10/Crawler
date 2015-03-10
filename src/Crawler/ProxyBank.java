@@ -119,7 +119,8 @@ class ProxyLoader extends Thread{
 				}
 				Logger.add("Proxy Source #2 : "+cnt);
 			}catch (Exception ex){}
-
+			ProxyBank.saveProxies();
+			
 			//Source #3 & #1
 			try{
 				for (int i=1;i<100;i++){
@@ -146,6 +147,7 @@ class ProxyLoader extends Thread{
 					} catch (Exception e) {
 					}
 					try{
+						ProxyBank.saveProxies();
 						Thread.sleep(3000);
 					}catch(Exception ex){}
 				}

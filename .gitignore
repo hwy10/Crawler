@@ -4,3 +4,5 @@ bin/*
 temp/*
 *.jpg
 temp/*
+proxybank.txt
+userbank.txt

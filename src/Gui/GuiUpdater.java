@@ -13,6 +13,7 @@ public class GuiUpdater extends Thread{
 		for (;;){
 			try{
 				window.updateGUI();
+				window.updateProxyTable();
 				Thread.sleep(Config.guiUpdateInterval*1000);
 			}catch (Exception ex){}
 			

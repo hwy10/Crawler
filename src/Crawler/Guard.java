@@ -17,15 +17,17 @@ public class Guard extends Thread{
 		for (;;){
 			try{
 				if (last.size()==Config.NWorker)
-					for (int i=0;i<Config.NWorker;i++){
+					for (int i=0;i<Config.NWorker;i++)
+					if (Control.workers.get(i).isAlive()){
 						try{
 							String cur=Control.workers.get(i).curStatus
 									+Control.workers.get(i).progress
 									+Control.workers.get(i).cnt;
 							if (last.get(i).equals(cur)&&!last.get(i).startsWith("###")){
 								Logger.add("Guard : Restart "+Control.workers.get(i).wid);
+								String task=core.workers.get(i).taskName;
 								core.stopWorker(i);
-								core.startWorker(i);
+								core.startWorker(i,task);
 							}
 						}catch (Exception ex){
 						}
