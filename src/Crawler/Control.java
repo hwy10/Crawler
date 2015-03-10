@@ -11,6 +11,7 @@ import com.sun.java.swing.plaf.windows.resources.windows;
 import Gui.MainWindow;
 
 public class Control {
+	
 	public MainWindow window;
 	
 	public static LinkedList<Worker> workers=new LinkedList<Worker>();
@@ -21,7 +22,7 @@ public class Control {
 	}
 	
 	public void init(){
-		
+        
 //		UUAPI.reportError("463814947");
 		
 		ProxyBank.loadProxies();

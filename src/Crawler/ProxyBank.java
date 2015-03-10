@@ -107,11 +107,14 @@ public class ProxyBank {
 class ProxyLoader extends Thread{
 	@Override
 	public void run() {
+		TaskSetting setting=new TaskSetting();
+		setting.proxyType="local";
+		Client client=new Client(setting);
 		for (;;){
 			//Source #2
 			try{
 				int cnt=0;
-				String content=NetworkConnect.send2Get("http://www.free-proxy-list.net", "", "");
+				String content=client.getContent("http://www.free-proxy-list.net");
 				Matcher matcher=Pattern.compile("<td>(\\d*\\.\\d*\\.\\d*\\.\\d*)</td><td>(\\d*)</td>").matcher(content);
 				for (;matcher.find();){
 					cnt++;
@@ -126,7 +129,7 @@ class ProxyLoader extends Thread{
 				for (int i=1;i<100;i++){
 					try {
 						int cnt=0;
-						String content=NetworkConnect.send2Get("http://proxy-list.org/english/index.php?p="+i,"","");
+						String content=client.getContent("http://proxy-list.org/english/index.php?p="+i);
 						Matcher matcher=Pattern.compile("<li class=\"proxy\">(.*?)</li>").matcher(content);
 						for (;matcher.find();){
 							ProxyBank.addProxy(matcher.group(1));
@@ -137,7 +140,7 @@ class ProxyLoader extends Thread{
 					}
 					try {
 						int cnt=0;
-						String content=NetworkConnect.send2Get("http://www.proxy.com.ru/list_"+i+".html","","");
+						String content=client.getContent("http://www.proxy.com.ru/list_"+i+".html");
 						Matcher matcher=Pattern.compile("<td>(\\d*\\.\\d*\\.\\d*\\.\\d*)</td><td>(\\d*)</td>").matcher(content);
 						for (;matcher.find();){
 							cnt++;

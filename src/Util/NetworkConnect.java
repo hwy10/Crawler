@@ -34,7 +34,7 @@ public class NetworkConnect {
 		    //System.out.println(method.getStatusLine());  
 		    //System.out.println(method.getResponseBodyAsString());  
 			result=method.getResponseBodyAsString();
-		    method.releaseConnection();
+			method.releaseConnection();
 		}catch (Exception ex){
 			ex.printStackTrace();
 		}

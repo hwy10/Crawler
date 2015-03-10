@@ -68,6 +68,7 @@ import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
 
 public class MainWindow {
+	
 	private AccountWindow userWindow;
 	
 	private Control core;
@@ -310,6 +311,19 @@ public class MainWindow {
 		upperSetBtn = new JButton("Set Params");
 		upperPanel_left.add(upperSetBtn);
 		upperSetBtn.setAlignmentX(Component.RIGHT_ALIGNMENT);
+		
+		runallBtn = new JButton("Run All");
+		runallBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				new Thread(){
+					@Override
+					public void run() {
+						core.execute("run 0-"+Config.NWorker);
+					}
+				}.start();
+			}
+		});
+		upperPanel_left.add(runallBtn);
 		upperSetBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				core.updateNWorker(Integer.valueOf(nworkerText.getText()));
@@ -386,6 +400,7 @@ public class MainWindow {
 	
 	public String workerTableLock="lock";
 	private JComboBox taskBox;
+	private JButton runallBtn;
 	
 	public void updateWorkerTable(){
 		Object[][] content=new Object[Config.NWorker][8];
@@ -415,7 +430,6 @@ public class MainWindow {
 		
 		workerTableModel=new DefaultTableModel(content,workerTableHeader);
 		workerTable.setModel(workerTableModel);
-		
 		
 	}
 	

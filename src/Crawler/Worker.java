@@ -127,7 +127,6 @@ public class Worker extends Thread{
 					Logger.add("Worker-"+wid+"---Initial Passed");
 					for (;;){
 						if (kill){Logger.add("Kill : "+wid);return;}
-						System.out.println(interrupted());
 						message=task.run(this,client);
 						if (message.equals("Queue Empty")){
 							updateStatus("###Waiting for Jobs");

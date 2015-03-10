@@ -32,6 +32,30 @@ public class DoubanDB {
 		}
 	}
 	
+	public void insertMovie(int mid,String name){
+		try{
+			PreparedStatement stat=conn.prepareStatement(
+					"INSERT INTO `movie`(`mid`, `name`) VALUES (?,?)");
+			stat.setInt(1, mid);
+			stat.setString(2, name);
+			stat.executeUpdate();
+		}catch (Exception ex){}
+	}
+	
+	public void insertUserWatched(int uid,int mid,String date,String tag,String review,int rating){
+		try{
+			PreparedStatement stat=conn.prepareStatement(
+					"INSERT INTO `user_watched`(`uid`, `mid`, `date`, `tag`, `review`, `rating`) "
+					+"VALUES (?,?,?,?,?,?)");
+			stat.setInt(1, uid);
+			stat.setInt(2, mid);
+			stat.setString(3, date);
+			stat.setString(4, tag);
+			stat.setString(5, review);
+			stat.setInt(6, rating);
+			stat.executeUpdate();
+		}catch (Exception ex){}	}
+	
 	public void updateWeiboId(String weiboId,int uid){
 		try{
 			String cmd="update user set weiboid='"+weiboId+"' where uid="+uid;
@@ -41,15 +65,15 @@ public class DoubanDB {
 			ex.printStackTrace();
 		}
 	}
-	public int getNextUser(){
+	public int getNextUser(String ori,String cur){
 		try{
-			String cmd="SELECT uid FROM `user` WHERE `crawltag`=0 limit 1";
+			String cmd="SELECT uid FROM `user` WHERE `crawltag`='"+ori+"' limit 1";
 			Statement stat=conn.createStatement();
 			ResultSet rs=stat.executeQuery(cmd);
 			int res=-1;
 			for (;rs.next();) res=rs.getInt(1);
 			if (res!=-1){
-				String cmd2="update `user` set crawltag=-1 WHERE uid="+res;
+				String cmd2="update `user` set crawltag='"+cur+"' WHERE uid="+res;
 				stat.executeUpdate(cmd2);
 				return res;
 			}

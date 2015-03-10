@@ -25,6 +25,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.client.methods.HttpGet;
@@ -41,6 +42,14 @@ import org.apache.http.NameValuePair;
 import com.sun.jndi.url.corbaname.corbanameURLContextFactory;
 
 public class Client {
+	static {  
+	    System.setProperty("org.apache.commons.logging.Log",  
+	            "org.apache.commons.logging.impl.SimpleLog");  
+	    System.setProperty("org.apache.commons.logging.simplelog.showdatetime",  
+	            "true");  
+	    System.setProperty("org.apache.commons.logging"  
+	            + ".simplelog.log.org.apache.commons.httpclient", "error");  
+	}  
 	HttpClient client;
 	HttpClientContext context;
 	public String proxy;

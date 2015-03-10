@@ -40,7 +40,7 @@ public class DoubanUser extends Crawler.Task{
 		worker.setProgress(1);
 
 		DoubanDB conn=new DoubanDB();
-		int nxtId=conn.getNextUser();
+		int nxtId=conn.getNextUser("0","-1");
 		conn.close();
 		if (nxtId==-1) return "Queue Empty";
 		
@@ -68,7 +68,7 @@ public class DoubanUser extends Crawler.Task{
 					tot=Integer.valueOf(matcher.group(1));
 				FileOps.createDir("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId);
 			}
-			worker.setProgress((i*100)/tot);
+			worker.setProgress(Math.max(1, (i*100)/tot));
 			FileOps.SaveFile("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId+"\\"+i, cur);
 			int ncur=0;
 			if (cur.contains("你在豆瓣的注册密码")) return "Restart";
