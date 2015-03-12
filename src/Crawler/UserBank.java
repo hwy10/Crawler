@@ -13,6 +13,13 @@ public class UserBank {
 	private static HashMap<String,Integer> assigned=new HashMap<String, Integer>();
 	private static HashMap<String, String> assignedProxy=new HashMap<String, String>();
 	
+	public static void releaseProxy(String site,String username){
+		try{
+			String uid=site+"::"+username;
+			assignedProxy.remove(uid);
+		}catch (Exception ex){}
+	}
+	
 	public static void addUser(String site,String username,String pwd){
 		if (!users.containsKey(site)){
 			users.put(site, new HashMap<String, String>());
@@ -28,8 +35,10 @@ public class UserBank {
 		for (String row:rows){
 			String [] sep=row.split("\t");
 			if (sep.length==3){
-				if (sep[0].equals("proxy"))
+				if (sep[0].equals("proxy")){
 					assignedProxy.put(sep[1], sep[2]);
+					ProxyBank.reportForce(sep[2]);
+				}
 				else addUser(sep[0],sep[1],sep[2]);
 			}
 			if (sep.length==2&&sep[0].equals("ban"))
@@ -82,26 +91,29 @@ public class UserBank {
 		save();
 	}
 	
-	public static String getUser(String site,int limit){
-		if (!users.containsKey(site)) return "";
-		for (String user:users.get(site).keySet()){
-			String uid=site+"::"+user;
-			if (banUsers.contains(uid)) continue;
-			if (assigned.containsKey(uid)&&assigned.get(uid)>=limit) continue;
-			if (!assigned.containsKey(uid))
-				assigned.put(uid, 1);
-			else assigned.put(uid, assigned.get(uid)+1);
-			return user+"::"+users.get(site).get(user);
+	public static synchronized String getUser(String site,int limit){
+		synchronized (assigned) {
+			if (!users.containsKey(site)) return "";
+			for (String user:users.get(site).keySet()){
+				String uid=site+"::"+user;
+				if (banUsers.contains(uid)) continue;
+				if (assigned.containsKey(uid)&&assigned.get(uid)>=limit) continue;
+				if (!assigned.containsKey(uid))
+					assigned.put(uid, 1);
+				else assigned.put(uid, assigned.get(uid)+1);
+				return user+"::"+users.get(site).get(user);
+			}
+			return "";
 		}
-		return "";
 	}
 	
-	public static void releaseUser(String site,String username){
+	public static synchronized void releaseUser(String site,String username){
 		try{
-			String uid=site+"::"+username;
-			assigned.put(uid,assigned.get(uid)-1);
+			synchronized (assigned) {
+				String uid=site+"::"+username;
+				assigned.put(uid,Math.max(0,assigned.get(uid)-1));
+			}
 		}catch (Exception ex){}
-		
 	}
 	
 	public static void changeBan(String site,String username){

@@ -37,7 +37,7 @@ public class Baike extends Task {
 
 	@Override
 	public String InitialCheck(Worker worker, Client client) {
-		if (client.getContent("http://www.baidu.com/").length()>0) return "";
+		if (!client.getContent("http://www.baidu.com/").equals(Client.ERROR)) return "";
 		return "Network Error";
 	}
 

@@ -5,9 +5,12 @@ import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import Util.NetworkConnect;
+
 import com.cqz.dm.UUAPI;
 import com.sun.java.swing.plaf.windows.resources.windows;
 
+import Functions.AutoStarter;
 import Gui.MainWindow;
 
 public class Control {
@@ -22,11 +25,9 @@ public class Control {
 	}
 	
 	public void init(){
-        
-//		UUAPI.reportError("463814947");
 		
 		ProxyBank.loadProxies();
-		ProxyBank.proxyLoader();
+//		ProxyBank.proxyLoader();
 		UserBank.load();
 		
 		updateNWorker(1);
@@ -66,6 +67,11 @@ public class Control {
 				if (cmd[1].equals("restTime"))
 					Config.restTime=Integer.valueOf(cmd[2]);
 			}
+			if (cmd[0].equals("function")){
+				AutoStarter task=(AutoStarter)Class.forName("Functions."+cmd[1]).newInstance();
+				task.core=this;
+				task.start();
+			}
 		}catch (Exception ex){
 			ex.printStackTrace();
 		}
@@ -87,14 +93,21 @@ public class Control {
 	}
 	
 	public void startWorker(int id, String task){
-		if (!workers.get(id).isAlive()||workers.get(id).kill){
-			workers.set(id, new Worker(this, id));
-			workers.get(id).setTask(task);
-			workers.get(id).start();
+		try{
+			if (!workers.get(id).isAlive()||workers.get(id).kill){
+				stopWorker(id);
+				workers.set(id, new Worker(this, id));
+				workers.get(id).setTask(task);
+				workers.get(id).start();
+			}
+		}catch (Exception ex){
+			ex.printStackTrace();
 		}
+			
 	}
 	public void stopWorker(int id){
 		workers.get(id).kill=true;
+		workers.get(id).interrupt();
 		workers.get(id).stop();
 		workers.get(id).release();
 		workers.get(id).updateUI();

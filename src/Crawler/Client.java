@@ -42,6 +42,7 @@ import org.apache.http.NameValuePair;
 import com.sun.jndi.url.corbaname.corbanameURLContextFactory;
 
 public class Client {
+	public static String ERROR="Error";
 	static {  
 	    System.setProperty("org.apache.commons.logging.Log",  
 	            "org.apache.commons.logging.impl.SimpleLog");  
@@ -54,7 +55,18 @@ public class Client {
 	HttpClientContext context;
 	public String proxy;
 	
+	
+	public Client(String type) {
+		TaskSetting req=new TaskSetting();
+		req.proxyType=type;
+		req.proxyLimit=1;
+		init(req);
+	}
 	public Client(TaskSetting req) {
+		init(req);
+	}
+	
+	public void init(TaskSetting req){
 		client=new DefaultHttpClient();
 		context=HttpClientContext.create();
 		client.getParams().setParameter(ClientPNames.COOKIE_POLICY, req.cookiePolicy);
@@ -108,9 +120,10 @@ public class Client {
 			}
 			return result.toString();
 		}catch(Exception ex){
+//			ex.printStackTrace();
 			Logger.addFull("Client.getContent\t"+ex.toString());
 		}
-		return "";
+		return "ERROR";
 	}
 	
 	public String sendPost(String url,LinkedList<NameValuePair> params){
@@ -136,6 +149,6 @@ public class Client {
 		}catch (Exception ex){
 			Logger.addFull("Client.sendPost\t"+ex.toString());
 		}
-		return "";
+		return "ERROR";
 	}
 }

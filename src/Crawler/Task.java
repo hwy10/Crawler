@@ -9,4 +9,5 @@ public abstract class Task {
 	abstract public String run(Worker worker,Client client);
 	abstract public String login(Worker worker,Client client);
 	abstract public void releaseResources();
+	public void taskFail(){};
 }

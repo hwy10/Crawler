@@ -14,7 +14,7 @@ import Crawler.Worker;
 import DBConnector.DoubanDB;
 
 public class DoubanMovie extends Task{
-
+	private int curId; 
 	TaskSetting req;
 	@Override
 	public TaskSetting clientRequest() {
@@ -32,14 +32,15 @@ public class DoubanMovie extends Task{
 
 	@Override
 	public String InitialCheck(Worker worker, Client client) {
-		if (client.getContent("http://m.douban.com/").length()>0) return "";
+		if (!client.getContent("http://m.douban.com/").equals(Client.ERROR)) return "";
 		return "Network Error";
 	}
 
 	@Override
 	public String run(Worker worker, Client client) {
 		DoubanDB conn=new DoubanDB();
-		int uid=conn.getNextUser("1","-2");
+		int uid=conn.getNextUser("2","2X");
+		curId=uid;
 		conn.close();
 		
 		if (uid<0) return "Queue Empty";
@@ -48,16 +49,19 @@ public class DoubanMovie extends Task{
 		worker.updateStatus("user : "+uid);
 		
 		String dir="D:\\cxz\\rawdata\\douban\\userwatched\\"+uid+"\\";
-		FileOps.createDir(dir);
+		if (!FileOps.exist(dir))
+			FileOps.createDir(dir);
 		
 		int tot=1000;
 		for (int i=1;i<=tot;i++){
 			if (i>1&&FileOps.exist(dir+i+".html")) continue;
-			System.out.println(i);
 			String content=client.getContent("http://m.douban.com/movie/people/"+uid+"/watched?page="+i);
-			if (!content.contains("看过的的电影")) {
-				FileOps.SaveFile("D:\\cxz\\rawdata\\douban\\userwatched\\_"+uid+"_"+i+".html", content);
-				return "Network Error";
+			for (int q=3;q>0;q--){
+				if (!content.contains("看过的的电影")){
+					if (q==1)
+						return "Network Error";
+					else content=client.getContent("http://m.douban.com/movie/people/"+uid+"/watched?page="+i);
+				}
 			}
 			if (i==1){
 				Matcher matcher=Pattern.compile("<span> 1/(\\d*) </span>").matcher(content);
@@ -69,10 +73,16 @@ public class DoubanMovie extends Task{
 			worker.setProgress(Math.max(1,(i*100)/tot));
 			
 			FileOps.SaveFile(dir+i+".html", content);
+			try{
+				Thread.sleep(1000);
+			}catch (Exception ex){
+				ex.printStackTrace();
+			}
 //			parseMovie(uid,content);
 		}
 		Logger.add("Worker-"+worker.wid+"---Finished "+uid+" ("+tot+")");
-		
+		conn=new DoubanDB();
+		conn.updateTag(uid,"3","2X");
 		return "";
 	}
 	
@@ -112,8 +122,12 @@ public class DoubanMovie extends Task{
 
 	@Override
 	public void releaseResources() {
-		// TODO Auto-generated method stub
-		
+	}
+	@Override
+	public void taskFail() {
+		DoubanDB conn=new DoubanDB();
+		conn.updateTag(curId,"1","-2");
+		conn.close();
 	}
 	
 }

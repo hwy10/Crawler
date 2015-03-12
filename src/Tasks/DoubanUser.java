@@ -52,7 +52,7 @@ public class DoubanUser extends Crawler.Task{
 		String username=extractUsername(homepage);
 		if (username.equals("")) {
 			Logger.add("Worker-"+worker.wid+"---Unknown Username");
-			return "Network Error";
+			return "";
 		}
 
 		LinkedList<Integer> friends=new LinkedList<Integer>();
@@ -71,7 +71,7 @@ public class DoubanUser extends Crawler.Task{
 			worker.setProgress(Math.max(1, (i*100)/tot));
 			FileOps.SaveFile("D:\\cxz\\rawdata\\douban\\userfriends\\"+nxtId+"\\"+i, cur);
 			int ncur=0;
-			if (cur.contains("你在豆瓣的注册密码")) return "Restart";
+			if (cur.contains("你在豆瓣的注册密码")) return "Network Error";
 			Matcher matcher=Pattern.compile("<a href=\"/people/(.*?)/").matcher(cur);
 			for (;matcher.find();){
 				int id=Integer.valueOf(matcher.group(1));
@@ -106,7 +106,7 @@ public class DoubanUser extends Crawler.Task{
 	public String login(Worker worker,Client client) {
 		try{
 			String content=client.getContent("http://m.douban.com/login");
-			if (content.length()==0) return "Network Error";
+			if (content.equals(Client.ERROR)) return "Network Error";
 			Matcher matcher=Pattern.compile("/captcha/(.*?)/").matcher(content);
 			String capId="";
 			if (matcher.find())
@@ -132,7 +132,7 @@ public class DoubanUser extends Crawler.Task{
 			if (res.contains("you should be redirected automatically.")) return "";
 			else {
 				Logger.tofile(capsol[0]);
-				return "Restart";
+				return "Network Error";
 			}
 		}catch (Exception ex){
 			ex.printStackTrace();

@@ -66,11 +66,16 @@ public class ProxyBank {
 		if (!badProxy.containsKey(p))
 			badProxy.put(p,1);
 		else badProxy.put(p,badProxy.get(p)+1);
-		if (badProxy.get(p)>3) {
+		if (badProxy.get(p)>=Config.ProxyTrial) {
 			blacklist.add(p);
 			removeProxy(p);
 			Logger.add("Proxy Removed : "+p);
 		}
+	}
+	public static void reportForce(String p){
+		blacklist.add(p);
+		removeProxy(p);
+		Logger.add("Proxy Removed : "+p);
 	}
 	public static void saveProxies(){
 		LinkedList<String> content=new LinkedList<String>();
@@ -111,6 +116,16 @@ class ProxyLoader extends Thread{
 		setting.proxyType="local";
 		Client client=new Client(setting);
 		for (;;){
+			//Source #4
+			try{
+				int cnt=0;
+				String content=client.getContent("http://www.xici.net.co/");
+				Matcher matcher=Pattern.compile("<td>(\\d*\\.\\d*\\.\\d*\\.\\d*)</td>[\\s\\S]*?<td>(\\d*)</td>").matcher(content);
+				for (;matcher.find();cnt++){
+					ProxyBank.addProxy(matcher.group(1), Integer.valueOf(matcher.group(2)));
+				}
+//				Logger.add("Proxy Source #4 : "+cnt);
+			}catch (Exception ex){}
 			//Source #2
 			try{
 				int cnt=0;
@@ -120,7 +135,7 @@ class ProxyLoader extends Thread{
 					cnt++;
 					ProxyBank.addProxy(matcher.group(1), Integer.valueOf(matcher.group(2)));
 				}
-				Logger.add("Proxy Source #2 : "+cnt);
+//				Logger.add("Proxy Source #2 : "+cnt);
 			}catch (Exception ex){}
 			ProxyBank.saveProxies();
 			
@@ -135,7 +150,7 @@ class ProxyLoader extends Thread{
 							ProxyBank.addProxy(matcher.group(1));
 							cnt++;
 						}
-						Logger.add("Proxy Source #3 "+i+" : "+cnt);
+//						Logger.add("Proxy Source #3 "+i+" : "+cnt);
 					} catch (Exception e) {
 					}
 					try {
@@ -146,7 +161,7 @@ class ProxyLoader extends Thread{
 							cnt++;
 							ProxyBank.addProxy(matcher.group(1), Integer.valueOf(matcher.group(2)));
 						}
-						Logger.add("Proxy Source #1 "+i+" : "+cnt);
+//						Logger.add("Proxy Source #1 "+i+" : "+cnt);
 					} catch (Exception e) {
 					}
 					try{

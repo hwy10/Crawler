@@ -113,7 +113,7 @@ public class WeiboUser extends Task{
 			if (matcher.find()) weibo=Integer.valueOf(matcher.group(1));
 			
 			conn=new WeiboDB();
-			conn.insertUser(uid, displayname, weibo, followee, follower);
+			conn.insertUser(uid, displayname, weibo, followee, follower,"1");
 			conn.close();
 			
 			String path="D:\\cxz\\rawdata\\weibo\\user\\";
@@ -166,7 +166,7 @@ public class WeiboUser extends Task{
 	public String login(Worker worker, Client client) {
 		try{
 			String content=client.getContent("http://login.weibo.cn/login/?");
-			if (content.length()==0) return "Network Error";
+			if (content.equals(Client.ERROR)) return "Network Error";
 			for (int i=0;i<3;i++){
 				worker.curStatus="login trial #"+(i+1);
 				Matcher randMatcher=Pattern.compile("rand=(\\d*)").matcher(content);
@@ -222,10 +222,8 @@ public class WeiboUser extends Task{
 				
 				String url="http://login.weibo.cn/login/?rand="+rand+"&backURL=http%3A%2F%2Fweibo.cn&backTitle=%E6%89%8B%E6%9C%BA%E6%96%B0%E6%B5%AA%E7%BD%91&vt=4";
 				content=client.sendPost(url, params);
-				System.out.println(content);
-				if (!content.contains("登录")) {
+				if (content.length()==0)
 					return "";
-				}
 			}
 		}catch (Exception ex){
 			return ex.toString();

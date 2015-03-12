@@ -8,6 +8,8 @@ import java.util.List;
 
 public class DoubanDB {
 	Connection conn;
+	private static String lock="lock";
+	
 	public DoubanDB(){
 		for (;;){
 			try{
@@ -31,7 +33,15 @@ public class DoubanDB {
 			ex.printStackTrace();
 		}
 	}
-	
+	public void updateTag(int uid,String tag,String otag){
+		try{
+			synchronized (this) {
+				String cmd="update `user` set crawltag='"+tag+"' where uid="+uid+" and crawltag='"+otag+"'";
+				Statement stat=conn.createStatement();
+				stat.executeUpdate(cmd);
+			}
+		}catch (Exception ex){}
+	}
 	public void insertMovie(int mid,String name){
 		try{
 			PreparedStatement stat=conn.prepareStatement(
@@ -67,16 +77,18 @@ public class DoubanDB {
 	}
 	public int getNextUser(String ori,String cur){
 		try{
-			String cmd="SELECT uid FROM `user` WHERE `crawltag`='"+ori+"' limit 1";
-			Statement stat=conn.createStatement();
-			ResultSet rs=stat.executeQuery(cmd);
 			int res=-1;
-			for (;rs.next();) res=rs.getInt(1);
-			if (res!=-1){
-				String cmd2="update `user` set crawltag='"+cur+"' WHERE uid="+res;
-				stat.executeUpdate(cmd2);
-				return res;
+			synchronized (this) {
+				String cmd="SELECT uid FROM `user` WHERE `crawltag`='"+ori+"' limit 1";
+				Statement stat=conn.createStatement();
+				ResultSet rs=stat.executeQuery(cmd);
+				for (;rs.next();) res=rs.getInt(1);
+				if (res!=-1){
+					String cmd2="update `user` set crawltag='"+cur+"' WHERE uid="+res;
+					stat.executeUpdate(cmd2);
+				}	
 			}
+			return res;
 		}catch (Exception ex){
 			ex.printStackTrace();
 		}

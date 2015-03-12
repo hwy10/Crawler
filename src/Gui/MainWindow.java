@@ -81,6 +81,7 @@ public class MainWindow {
 	public DefaultTableModel workerTableModel;
 	public DefaultTableModel proxyTableModel;
 	
+	private String[] tasks=new String[] {"DoubanMovie", "DoubanUser", "WeiboUser", "Baike","WeiboFriend"};
 	private String[] workerTableHeader=new String[] {
 			"ID","Proxy","Account","Task","Status","Progress","#","Action"
 		};
@@ -278,7 +279,7 @@ public class MainWindow {
 		
 		taskBox = new JComboBox();
 //		taskBox.setPreferredSize(new Dimension(50,20));
-		taskBox.setModel(new DefaultComboBoxModel(new String[] {"DoubanMovie", "DoubanUser", "WeiboUser", "Baike"}));
+		taskBox.setModel(new DefaultComboBoxModel(tasks));
 		taskBox.setSelectedItem(Config.Task);
 		upperPanel_left.add(taskBox);
 		
@@ -308,6 +309,19 @@ public class MainWindow {
 		refreshText.setColumns(3);
 		upperPanel_left.add(refreshText);
 		
+		lblProxyTrials = new JLabel("# Proxy Trials");
+		lblProxyTrials.setBorder(BorderFactory.createCompoundBorder(
+								BorderFactory.createCompoundBorder(),
+								BorderFactory.createEmptyBorder(4, 10, 4, 10)));
+		upperPanel_left.add(lblProxyTrials);
+		
+		proxyText = new JTextField();
+		proxyText.setText(Config.ProxyTrial+"");
+		proxyText.setMaximumSize(new Dimension(30, 100));
+		proxyText.setHorizontalAlignment(SwingConstants.CENTER);
+		proxyText.setColumns(3);
+		upperPanel_left.add(proxyText);
+		
 		upperSetBtn = new JButton("Set Params");
 		upperPanel_left.add(upperSetBtn);
 		upperSetBtn.setAlignmentX(Component.RIGHT_ALIGNMENT);
@@ -330,6 +344,7 @@ public class MainWindow {
 				Config.Task=taskBox.getSelectedItem().toString();
 				Config.GuardInterval=Integer.valueOf(guardText.getText());
 				Config.guiUpdateInterval=Integer.valueOf(refreshText.getText());
+				Config.ProxyTrial=Integer.valueOf(proxyText.getText());
 			}
 		});
 		
@@ -401,6 +416,8 @@ public class MainWindow {
 	public String workerTableLock="lock";
 	private JComboBox taskBox;
 	private JButton runallBtn;
+	private JLabel lblProxyTrials;
+	private JTextField proxyText;
 	
 	public void updateWorkerTable(){
 		Object[][] content=new Object[Config.NWorker][8];

@@ -118,7 +118,7 @@ public class Worker extends Thread{
 		if (client.proxy.equals("No_Available_Proxy")) return;
 		updateUI();
 		for (;;){
-			if (kill){Logger.add("Kill : "+wid);return;}
+			if (kill){Logger.add("Kill : "+wid);release();return;}
 			try{
 				setProgress(-1);
 				String message=task.InitialCheck(this,client);
@@ -126,11 +126,12 @@ public class Worker extends Thread{
 					updateStatus("Initial Passed");
 					Logger.add("Worker-"+wid+"---Initial Passed");
 					for (;;){
-						if (kill){Logger.add("Kill : "+wid);return;}
+						if (kill){Logger.add("Kill : "+wid);release();return;}
 						message=task.run(this,client);
 						if (message.equals("Queue Empty")){
 							updateStatus("###Waiting for Jobs");
 							Thread.sleep(1000*60);
+							message="";
 						}
 						if (message.length()>0) break;
 						cnt++;
@@ -138,6 +139,7 @@ public class Worker extends Thread{
 						try{
 							Thread.sleep(1000);
 						}catch (Exception ex){
+							ex.printStackTrace();
 						}
 					}
 				}
@@ -145,6 +147,7 @@ public class Worker extends Thread{
 				Logger.add("Worker-"+wid+"---"+message);
 				
 				if (message.equals("Network Error")){
+					task.taskFail();
 					if (qcnt==0) ProxyBank.report(client.proxy);
 					updateStatus("");
 					
@@ -170,11 +173,12 @@ public class Worker extends Thread{
 	}
 	
 	public void release(){
-		task.releaseResources();
-		ProxyBank.releaseProxy(client.proxy);
+		if (task!=null){
+			task.taskFail();
+			task.releaseResources();
+		}
+		if (client!=null) ProxyBank.releaseProxy(client.proxy);
 		client=null;
-//		task=null;
-//		taskName="";
 		progress=-1;
 		curStatus="";
 	}
