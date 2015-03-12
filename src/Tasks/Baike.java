@@ -20,8 +20,9 @@ import Crawler.Worker;
 public class Baike extends Task {
 	private TaskSetting req;
 	public static String lock="lock";
-	public static int nxtId=1;
+	public static int nxtId=800000;
 	public static LinkedList<Integer> Q=new LinkedList<Integer>();
+	public int id = -1;
 	@Override
 	public TaskSetting clientRequest() {
 		return req;
@@ -43,7 +44,6 @@ public class Baike extends Task {
 
 	@Override
 	public String run(Worker worker, Client client) {
-		int id;
 		synchronized (lock) {
 			if (Q.size()>0){
 				id=Q.getFirst();
@@ -54,7 +54,7 @@ public class Baike extends Task {
 				nxtId++;
 			}
 		}
-		worker.curStatus="###Downloading "+id;
+		worker.curStatus="Downloading "+id;
 		Logger.add(worker.wid+"---Downloading "+id+" Queue("+Q.size()+")");
 		String dirName = "E:/Baidu/"+((id-1)/50000*50000 + 1)+"-"+((id-1)/50000*50000 + 50000);
 		File file=new File(dirName);
@@ -80,10 +80,10 @@ public class Baike extends Task {
 			content.contains("data-title=\"编辑\"") ||
 			content.contains(">多义词</a>")) flag = true;
 		if (flag == false) {
+			FileOps.SaveFile(dirName+"/_"+id+".htm", content);
 			synchronized(lock){
 				Q.add(id);
 			}
-			FileOps.SaveFile(dirName+"/_"+id+".htm", content);
 			return "Network Error";
 		}
 		ProxyBank.reportGood(client.proxy);
@@ -104,8 +104,12 @@ public class Baike extends Task {
 
 	@Override
 	public void releaseResources() {
+		if (id != -1) {
+			synchronized(lock){
+				Q.add(id);
+			}
+		}
 		// TODO Auto-generated method stub
-		
 	}
 	
 }
