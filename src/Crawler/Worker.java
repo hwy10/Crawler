@@ -136,11 +136,11 @@ public class Worker extends Thread{
 						if (message.length()>0) break;
 						cnt++;
 						updateUI();
-						try{
-							Thread.sleep(1000);
-						}catch (Exception ex){
-							ex.printStackTrace();
-						}
+//						try{
+//							Thread.sleep(1000);
+//						}catch (Exception ex){
+//							ex.printStackTrace();
+//						}
 					}
 				}
 				

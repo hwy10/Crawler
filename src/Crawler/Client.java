@@ -104,14 +104,16 @@ public class Client {
 		}
 		return false;
 	}
-	
 	public String getContent(String url){
+		return getContent(url,"UTF-8");
+	}
+	public String getContent(String url,String encoding){
 		try{
 			HttpGet get=new HttpGet(url);
 			
 			HttpResponse res=client.execute(get,context);
 			BufferedReader rd = new BufferedReader(
-				new InputStreamReader(res.getEntity().getContent(),"UTF-8"));
+				new InputStreamReader(res.getEntity().getContent(),encoding));
 		 
 			StringBuffer result = new StringBuffer();
 			String line = "";

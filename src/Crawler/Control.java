@@ -27,7 +27,7 @@ public class Control {
 	public void init(){
 		
 		ProxyBank.loadProxies();
-//		ProxyBank.proxyLoader();
+		ProxyBank.proxyLoader();
 		UserBank.load();
 		
 		updateNWorker(1);

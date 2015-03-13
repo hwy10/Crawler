@@ -78,7 +78,7 @@ public class DoubanDB {
 	public int getNextUser(String ori,String cur){
 		try{
 			int res=-1;
-			synchronized (this) {
+			synchronized (lock) {
 				String cmd="SELECT uid FROM `user` WHERE `crawltag`='"+ori+"' limit 1";
 				Statement stat=conn.createStatement();
 				ResultSet rs=stat.executeQuery(cmd);

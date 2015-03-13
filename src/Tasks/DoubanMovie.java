@@ -8,6 +8,7 @@ import org.apache.http.client.params.CookiePolicy;
 import BasicOps.FileOps;
 import Crawler.Client;
 import Crawler.Logger;
+import Crawler.ProxyBank;
 import Crawler.Task;
 import Crawler.TaskSetting;
 import Crawler.Worker;
@@ -25,7 +26,7 @@ public class DoubanMovie extends Task{
 	public boolean superInit(Worker worker) {
 		req=new TaskSetting();
 		req.proxyLimit=1;
-		req.proxyType="";
+		req.proxyType="local";
 		req.cookiePolicy=CookiePolicy.RFC_2109;
 		return true;
 	}
@@ -46,7 +47,7 @@ public class DoubanMovie extends Task{
 		if (uid<0) return "Queue Empty";
 		
 		worker.setProgress(1);
-		worker.updateStatus("user : "+uid);
+		worker.updateStatus("###user : "+uid);
 		
 		String dir="D:\\cxz\\rawdata\\douban\\userwatched\\"+uid+"\\";
 		if (!FileOps.exist(dir))
@@ -56,28 +57,31 @@ public class DoubanMovie extends Task{
 		for (int i=1;i<=tot;i++){
 			if (i>1&&FileOps.exist(dir+i+".html")) continue;
 			String content=client.getContent("http://m.douban.com/movie/people/"+uid+"/watched?page="+i);
-			for (int q=3;q>0;q--){
-				if (!content.contains("看过的的电影")){
-					if (q==1)
-						return "Network Error";
-					else content=client.getContent("http://m.douban.com/movie/people/"+uid+"/watched?page="+i);
-				}
+			for (;!content.contains("看过的的电影");){
+				System.out.println(content);
+//				ProxyBank.releaseProxy(client.proxy);
+				client=new Client(clientRequest());
+				content=client.getContent("http://m.douban.com/movie/people/"+uid+"/watched?page="+i);
+				worker.updateUI();
+				try{Thread.sleep(3000);}catch (Exception ex){}
 			}
+			Logger.add("Page "+i+" Finished");
 			if (i==1){
 				Matcher matcher=Pattern.compile("<span> 1/(\\d*) </span>").matcher(content);
 				if (matcher.find()){
 					tot=Integer.valueOf(matcher.group(1));
-					worker.updateStatus("user : "+uid+" watched : "+tot);
+					worker.updateStatus("###user : "+uid+" watched : "+tot);
 				}
-			}
+				else tot=1;
+			}													
 			worker.setProgress(Math.max(1,(i*100)/tot));
 			
 			FileOps.SaveFile(dir+i+".html", content);
-			try{
-				Thread.sleep(1000);
-			}catch (Exception ex){
-				ex.printStackTrace();
-			}
+//			try{
+//				Thread.sleep(1000);
+//			}catch (Exception ex){
+//				ex.printStackTrace();
+//			}
 //			parseMovie(uid,content);
 		}
 		Logger.add("Worker-"+worker.wid+"---Finished "+uid+" ("+tot+")");

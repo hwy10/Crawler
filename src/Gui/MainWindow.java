@@ -81,7 +81,7 @@ public class MainWindow {
 	public DefaultTableModel workerTableModel;
 	public DefaultTableModel proxyTableModel;
 	
-	private String[] tasks=new String[] {"DoubanMovie", "DoubanUser", "WeiboUser", "Baike","WeiboFriend"};
+	private String[] tasks=new String[] {"DoubanMovie", "DoubanUser", "WeiboUser", "Baike","WeiboFriend","DoubanUserFix"};
 	private String[] workerTableHeader=new String[] {
 			"ID","Proxy","Account","Task","Status","Progress","#","Action"
 		};
